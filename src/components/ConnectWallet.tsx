@@ -7,7 +7,7 @@ export default function ConnectWallet() {
 
   if (account) {
     return (
-      <div className="text-sm text-gray-600">
+      <div className="text-sm font-bold text-red-800">
         Connected: {account.slice(0, 6)}...{account.slice(-4)}
       </div>
     );

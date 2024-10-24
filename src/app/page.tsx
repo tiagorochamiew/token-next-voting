@@ -13,9 +13,7 @@ export default function Home() {
         <div className="min-h-screen bg-gray-100 p-8">
           <div className="max-w-6xl mx-auto">
             <div className="mb-8 flex justify-between items-center">
-              <h1 className="text-3xl font-bold">
-                Real World Asset Markeptlace
-              </h1>
+              <h1 className="text-3xl font-bold text-black"> Markeptlace</h1>
               <ConnectWallet />
             </div>
             <AssetGrid />

@@ -7,7 +7,7 @@ export default function AssetCard({ asset }: { asset: Asset }) {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="p-4">
-        <h3 className="text-lg font-semibold">{asset.title}</h3>
+        <h3 className="text-lg font-semibold text-blue-800">{asset.title}</h3>
       </CardHeader>
       <CardContent className="p-4">
         {asset.url ? (
@@ -22,8 +22,8 @@ export default function AssetCard({ asset }: { asset: Asset }) {
           </div>
         )}
         <div className="mt-4 text-sm text-gray-600">
-          <p>Koltena ID: {asset.koltenaId}</p>
-          <p>Koltena Tokens: {asset.koltenaTokens}</p>
+          <p>ID: {asset.koltenaId}</p>
+          <p>#{asset.koltenaTokens}</p>
         </div>
       </CardContent>
     </Card>

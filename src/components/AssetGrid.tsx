@@ -12,7 +12,7 @@ export default function AssetGrid() {
     if (account) {
       fetchAssets(account);
     }
-  }, [account]);
+  }, [account, fetchAssets]);
 
   if (error) {
     return (
