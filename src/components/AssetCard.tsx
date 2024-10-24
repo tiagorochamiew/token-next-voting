@@ -1,5 +1,6 @@
 // components/AssetCard.js
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import Image from "next/image";
 
 import { Asset } from "@/interfaces/Asset";
 
@@ -7,14 +8,17 @@ export default function AssetCard({ asset }: { asset: Asset }) {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="p-4">
+        <h1 className="text-sm text-black">{asset.type}</h1>
         <h3 className="text-lg font-semibold text-blue-800">{asset.title}</h3>
       </CardHeader>
-      <CardContent className="p-4">
-        {asset.url ? (
-          <img
+      <CardContent className="p-14">
+        {asset.url && asset.url !== "" && asset.url !== "string" ? (
+          <Image
             src={asset.url}
             alt={asset.title}
-            className="w-full h-48 object-cover rounded"
+            width={500}
+            height={192}
+            className="object-cover rounded"
           />
         ) : (
           <div className="w-full h-48 bg-gray-200 flex items-center justify-center rounded">

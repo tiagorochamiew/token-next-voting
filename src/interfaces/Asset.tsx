@@ -1,5 +1,6 @@
 export interface Asset {
   id: string;
+  type: string;
   koltenaId: number;
   koltenaTokens: number;
   title: string;
