@@ -19,6 +19,7 @@ export default function AssetCard({ asset }: { asset: Asset }) {
             width={500}
             height={192}
             className="object-cover rounded"
+            style={{ width: "auto", height: "auto" }}
           />
         ) : (
           <div className="w-full h-48 bg-gray-200 flex items-center justify-center rounded">

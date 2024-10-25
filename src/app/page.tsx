@@ -7,15 +7,15 @@ import { AssetsProvider } from "../contexts/AssetsContext";
 import ConnectWallet from "../components/ConnectWallet";
 import AssetGrid from "../components/AssetGrid";
 import { Tabs } from "../components/ui/Tab";
-import { PageTabs } from "../enums/PageTabs";
+import { Pages } from "@/enums/Pages";
 
 const tabs = [
-  { id: PageTabs.HOME, label: "Home" },
-  { id: PageTabs.ACCOUNT, label: "My Account" },
+  { id: Pages.HOME, label: "Home" },
+  { id: Pages.ACCOUNT, label: "My Account" },
 ];
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState(PageTabs.HOME);
+  const [activeTab, setActiveTab] = useState(Pages.HOME);
   return (
     <Web3Provider>
       <AssetsProvider>
@@ -28,7 +28,7 @@ export default function Home() {
             <Tabs
               tabs={tabs}
               activeTab={activeTab}
-              onTabChange={(tabId: string) => setActiveTab(tabId as PageTabs)}
+              onTabChange={(tabId: string) => setActiveTab(tabId as Pages)}
             />
             <AssetGrid activeTab={activeTab} />
           </div>

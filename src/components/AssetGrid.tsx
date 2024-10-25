@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useWeb3 } from "../contexts/Web3Context";
 import { useAssets } from "../contexts/AssetsContext";
 import AssetCard from "./AssetCard";
-import { PageTabs } from "@/enums/PageTabs";
+import { Pages } from "@/enums/Pages";
 interface AssetGridProps {
   activeTab: string;
 }
@@ -12,11 +12,7 @@ export default function AssetGrid({ activeTab }: AssetGridProps) {
   const { assets, isLoading, error, fetchAssets } = useAssets();
 
   useEffect(() => {
-    if (activeTab === PageTabs.ACCOUNT && account) {
-      fetchAssets(account);
-    } else if (activeTab === PageTabs.HOME) {
-      fetchAssets(PageTabs.HOME);
-    }
+    fetchAssets(account);
   }, [activeTab, account, fetchAssets]);
 
   if (error) {
@@ -42,7 +38,7 @@ export default function AssetGrid({ activeTab }: AssetGridProps) {
   if (assets.length === 0) {
     return (
       <div className="text-center py-8 text-gray-600">
-        {activeTab === PageTabs.ACCOUNT
+        {activeTab === Pages.ACCOUNT
           ? "No assets found for this wallet"
           : "No assets available"}
       </div>
