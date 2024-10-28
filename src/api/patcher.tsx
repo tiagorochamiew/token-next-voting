@@ -1,8 +1,11 @@
+import { POSTResponse } from "@/interfaces/POSTResponse";
+import { PUTResponse } from "@/interfaces/PUTResponse";
+
 export async function patcher<T>(
   url: string,
   method: string,
   formData: T
-): Promise<T> {
+): Promise<POSTResponse | PUTResponse> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${url}`, {
     method: method.toUpperCase(),
     headers: { "Content-Type": "application/json" },
