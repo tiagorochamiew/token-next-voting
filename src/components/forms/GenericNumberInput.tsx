@@ -1,5 +1,4 @@
 // components/forms/GenericNumberInput.tsx
-
 import React from "react";
 
 interface GenericNumberInputProps {

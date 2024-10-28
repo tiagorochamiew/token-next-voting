@@ -61,7 +61,6 @@ export function SmartContractProvider({
       try {
         setIsLoading(true);
         setError(null);
-
         if (!account) {
           throw new Error("Please connect your wallet");
         }

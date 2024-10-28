@@ -5,8 +5,6 @@ interface AssetTypeFieldsProps {
   type: string;
   formData: Partial<Asset>;
   errors: Partial<Record<keyof Asset, string>>;
-  isProcessing: boolean;
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   genericStringInput: (
     name: string,
     data: string | undefined,
@@ -24,8 +22,6 @@ export function AssetTypeFields({
   type,
   formData,
   errors,
-  isProcessing,
-  handleInputChange,
   genericStringInput,
   genericArrayInput,
 }: AssetTypeFieldsProps) {

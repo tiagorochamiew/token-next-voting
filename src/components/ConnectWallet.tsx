@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import WalletModal from "./WalletModal";
 
 interface ConnectWalletProps {
-  setIsModalOpen: (isOpen: boolean) => void; // Update this to match AssetGrid's setter
+  setIsModalOpen: (isOpen: boolean) => void;
 }
 
 export default function ConnectWallet({ setIsModalOpen }: ConnectWalletProps) {
@@ -35,10 +35,7 @@ export default function ConnectWallet({ setIsModalOpen }: ConnectWalletProps) {
       </Button>
 
       {isOpen && (
-        <WalletModal
-          setIsOpen={setIsOpen}
-          setIsModalOpen={setIsModalOpen} // Pass it through
-        />
+        <WalletModal setIsOpen={setIsOpen} setIsModalOpen={setIsModalOpen} />
       )}
     </div>
   );

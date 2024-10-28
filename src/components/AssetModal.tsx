@@ -11,13 +11,8 @@ import { GenericStringInput } from "./forms/GenericStringInput";
 import { GenericArrayInput } from "./forms/GenericArrayInput";
 import { validateAssetForm } from "../utils/Validators";
 import { formatFieldName } from "../utils/Formatter";
-
-export const ASSET_TYPES = [
-  { id: "RealEstate", label: "Real Estate" },
-  { id: "NFT", label: "NFT Collectible" },
-  { id: "Artwork", label: "Artwork" },
-  { id: "Test", label: "Test" },
-];
+import { ASSET_TYPES } from "@/utils/Constants";
+import { toast } from "react-toastify";
 
 interface AssetModalProps {
   isOpen: boolean;
@@ -112,20 +107,22 @@ export default function AssetModal({
     setIsProcessing(true);
     try {
       const url = `${formData.type?.toLocaleLowerCase().replace(" ", "")}s`;
+
+      if (!formData?.koltenaTokens || formData.koltenaTokens <= 0) {
+        console.error("Error creating asset: koltenaTokens not found");
+        return;
+      }
       const postResponse = await patcher(url, "POST", formData);
       if (!postResponse || !postResponse?.success || !postResponse?.data) {
         console.error("Error creating asset:", postResponse);
         return;
       }
+      toast.success("Asset created successfully, minting tokens...");
       console.log("Created asset:", postResponse?.data);
       const asset = (postResponse?.data as Asset) || {};
-
-      if (!asset?.koltenaTokens || asset.koltenaTokens <= 0) {
-        console.error("Error creating asset: koltenaTokens not found");
-        return;
-      }
       console.log("Minting asset with tokens:", asset.koltenaTokens);
       const { txHash, koltenaId } = await onMint(asset.koltenaTokens);
+      toast.success("Minted created successfully, updating database...");
       console.log("Minted asset:", { txHash, koltenaId });
       if (!koltenaId) {
         console.error("Error minting asset: koltenaId not found");
@@ -147,6 +144,7 @@ export default function AssetModal({
         return;
       }
       console.log("Updated asset:", putResponse?.data?.id);
+      toast.success("F-NFT created successfully!");
       onClose();
     } catch (error) {
       console.error("Error creating asset:", error);
@@ -272,10 +270,10 @@ export default function AssetModal({
               />
               <div>
                 <label className="block text-sm font-medium text-red-800 mb-1">
-                  Type
+                  Select Type:
                 </label>
                 <select
-                  className="w-full p-2 border rounded-lg text-black bg-white"
+                  className="w-full p-2 border rounded-lg text-white bg-blue-500"
                   name="type"
                   value={formData.type}
                   onChange={handleInputChange}
@@ -295,8 +293,6 @@ export default function AssetModal({
                     type={formData.type || ""}
                     formData={formData}
                     errors={errors}
-                    isProcessing={isProcessing}
-                    handleInputChange={handleInputChange}
                     genericStringInput={(name, data, errors) => (
                       <GenericStringInput
                         name={name}
@@ -324,7 +320,7 @@ export default function AssetModal({
               </div>
               <div className="flex justify-end space-x-2 mt-4">
                 <Button
-                  onClick={() => setFormData({})}
+                  onClick={() => setFormData({ type: ASSET_TYPES[0].id })}
                   disabled={isProcessing}
                   variant="clear"
                 >
