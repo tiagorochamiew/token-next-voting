@@ -29,7 +29,7 @@ export default function AssetCard({ asset }: { asset: Asset }) {
         asset.url !== "" &&
         asset.url !== "string" &&
         !imageError ? (
-          <div className="relative">
+          <div className="relative" style={{ aspectRatio: "2/3" }}>
             <Image
               src={asset.url}
               alt={asset.title}

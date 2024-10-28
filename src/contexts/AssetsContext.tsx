@@ -9,7 +9,7 @@ import {
 } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/api/fetcher";
-import { GETResponse } from "@/interfaces/GETResponse";
+import { GETResponse } from "@/interfaces/Response";
 import { ITEMS_PER_PAGE } from "@/utils/Constants";
 
 interface AssetsContextType {

@@ -1,4 +1,4 @@
-import { GETResponse } from "@/interfaces/GETResponse";
+import { GETResponse } from "@/interfaces/Response";
 
 export async function fetcher(url: string): Promise<GETResponse> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${url}`);
