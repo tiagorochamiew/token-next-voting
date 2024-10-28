@@ -59,7 +59,47 @@ export default function AssetModal({
     if (!formData.age) newErrors.age = "Age is required";
     if (!formData.size) newErrors.size = "Size is required";
     if (!formData.liquidity) newErrors.liquidity = "Liquidity is required";
+    if (!formData.historicalPerformance?.length) {
+      newErrors.historicalPerformance =
+        "At least one historical performance item is required";
+    }
+    if (!formData.marketTrends?.length) {
+      newErrors.marketTrends = "At least one market trend is required";
+    }
+    if (!formData.externalEconomicFactors?.length) {
+      newErrors.externalEconomicFactors =
+        "At least one economic factor is required";
+    }
+    if (!formData.volatility?.length) {
+      newErrors.volatility = "At least one volatility value is required";
+    }
 
+    if (formData.type === "RealEstate") {
+      if (!formData.features?.length) {
+        newErrors.features = "At least one feature is required";
+      }
+      if (!formData.comparableSales?.length) {
+        newErrors.comparableSales = "At least one comparable sale is required";
+      }
+      if (!formData.rentalIncome?.length) {
+        newErrors.rentalIncome = "At least one rental income value is required";
+      }
+    } else if (formData.type === "NFT") {
+      if (!formData.artist) newErrors.artist = "Artist is required";
+      if (!formData.artistReputation)
+        newErrors.artistReputation = "Artist reputation is required";
+      if (!formData.rarity) newErrors.rarity = "Rarity is required";
+      if (!formData.culturalInfluence)
+        newErrors.culturalInfluence = "Cultural influence is required";
+      if (!formData.exhibitionHistory?.length) {
+        newErrors.exhibitionHistory = "At least one exhibition is required";
+      }
+    } else if (formData.type === "Artwork") {
+      if (!formData.creatorReputation)
+        newErrors.creatorReputation = "Creator reputation is required";
+      if (!formData.rarity) newErrors.rarity = "Rarity is required";
+      if (!formData.utility) newErrors.utility = "Utility is required";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -69,42 +109,37 @@ export default function AssetModal({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    // default values for every field while in dev mode
-    setFormData((prev) =>
-      name === "type" && value === "Test"
-        ? {
-            type: "Real Estate",
-            title: "Testing title",
-            koltenaTokens: 10,
-            url: process.env.NEXT_PUBLIC_DEFAULT_URL || "",
-            price: 560,
-            condition: "testing condition",
-            age: "testing age",
-            size: "testing size",
-            liquidity: "testing liquidity",
-            historicalPerformance: ["testing historical performance"],
-            marketTrends: ["testing market trends"],
-            externalEconomicFactors: ["testing external economic factors"],
-            volatility: [100],
-            location: "testing location",
-            regulatoryEnvironment: "testing regulatory environment",
-            features: ["testing features"],
-            comparableSales: ["testing comparable sales"],
-            rentalIncome: [30],
-          }
-        : {
-            ...prev,
-            [name]:
-              name === "price" || name === "tokens" ? Number(value) : value,
-          }
-    );
 
-    // setFormData((prev) => ({
-    //   ...prev,
-    //   [name]: name === "price" || name === "tokens" ? Number(value) : value,
-    // }));
+    if (name === "type" && value === "Test") {
+      setFormData({
+        type: "Real Estate",
+        title: "Testing title",
+        koltenaTokens: 10,
+        url: process.env.NEXT_PUBLIC_DEFAULT_URL || "",
+        price: 560,
+        condition: "testing condition",
+        age: "testing age",
+        size: "testing size",
+        liquidity: "testing liquidity",
+        historicalPerformance: ["testing historical performance"],
+        marketTrends: ["testing market trends"],
+        externalEconomicFactors: ["testing external economic factors"],
+        volatility: [100],
+        location: "testing location",
+        regulatoryEnvironment: "testing regulatory environment",
+        features: ["testing features"],
+        comparableSales: ["testing comparable sales"],
+        rentalIncome: [30],
+      });
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]:
+        name === "price" || name === "koltenaTokens" ? Number(value) : value,
+    }));
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -188,25 +223,26 @@ export default function AssetModal({
                 formData.liquidity,
                 errors.liquidity
               )}
-              {genericStringInput(
+              {genericArrayInput(
                 "Historical Performance",
-                formData.historicalPerformance?.join(", "),
+                formData.historicalPerformance,
                 errors.historicalPerformance
               )}
-              {genericStringInput(
+              {genericArrayInput(
                 "Market Trends",
-                formData.marketTrends?.join(", "),
+                formData.marketTrends,
                 errors.marketTrends
               )}
-              {genericStringInput(
+              {genericArrayInput(
                 "External Economic Factors",
-                formData.externalEconomicFactors?.join(", "),
+                formData.externalEconomicFactors,
                 errors.externalEconomicFactors
               )}
-              {genericNumberInput(
+              {genericArrayInput(
                 "Volatility",
-                formData.volatility?.[0],
-                errors.volatility
+                formData.volatility,
+                errors.volatility,
+                true
               )}
               <div>
                 <label className="block text-sm font-medium text-red-800 mb-1">
@@ -267,34 +303,31 @@ export default function AssetModal({
     if (type === ASSET_TYPES[0].id)
       return (
         <>
-          ({genericStringInput("Location", formData.location, errors.location)}
+          {genericStringInput("Location", formData.location, errors.location)}
           {genericStringInput(
             "Regulatory Environment",
             formData.regulatoryEnvironment,
             errors.regulatoryEnvironment
           )}
-          {genericStringInput(
-            "Features",
-            formData.features?.join(", "),
-            errors.features
-          )}
-          {genericStringInput(
+          {genericArrayInput("Features", formData.features, errors.features)}
+          {genericArrayInput(
             "Comparable Sales",
-            formData.comparableSales?.join(", "),
+            formData.comparableSales,
             errors.comparableSales
           )}
-          {genericNumberInput(
+          {genericArrayInput(
             "Rental Income",
-            formData.rentalIncome?.[0],
-            errors.rentalIncome
+            formData.rentalIncome,
+            errors.rentalIncome,
+            true
           )}
-          )
         </>
       );
+
     if (type === ASSET_TYPES[1].id)
       return (
         <>
-          ({genericStringInput("Artist", formData.artist, errors.artist)}
+          {genericStringInput("Artist", formData.artist, errors.artist)}
           {genericStringInput(
             "Artist Reputation",
             formData.artistReputation,
@@ -306,12 +339,11 @@ export default function AssetModal({
             formData.culturalInfluence,
             errors.culturalInfluence
           )}
-          {genericStringInput(
+          {genericArrayInput(
             "Exhibition History",
-            formData.exhibitionHistory?.join(", "),
+            formData.exhibitionHistory,
             errors.exhibitionHistory
           )}
-          )
         </>
       );
     if (type === ASSET_TYPES[2].id)
@@ -392,5 +424,83 @@ export default function AssetModal({
         index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)
       )
       .join("");
+  }
+
+  function genericArrayInput(
+    name: string,
+    data: (string | number)[] | undefined,
+    errors: string | undefined,
+    isNumber: boolean = false
+  ) {
+    const fieldName = formatFieldName(name);
+
+    const handleAddItem = () => {
+      setFormData((prev) => ({
+        ...prev,
+        [fieldName]: [
+          ...((prev[fieldName as keyof Asset] as (string | number)[]) || []),
+          isNumber ? 0 : "",
+        ],
+      }));
+    };
+
+    const handleRemoveItem = (index: number) => {
+      setFormData((prev) => ({
+        ...prev,
+        [fieldName]: (
+          prev[fieldName as keyof Asset] as (string | number)[]
+        )?.filter((_, i) => i !== index),
+      }));
+    };
+
+    const handleItemChange = (index: number, value: string) => {
+      setFormData((prev) => {
+        const array = [
+          ...((prev[fieldName as keyof Asset] as (string | number)[]) || []),
+        ];
+        array[index] = isNumber ? Number(value) : value;
+        return { ...prev, [fieldName]: array };
+      });
+    };
+    return (
+      <div>
+        <label className="block text-sm font-medium text-red-800 mb-1">
+          {name}
+        </label>
+        <div className="space-y-2">
+          {data?.map((item, index) => (
+            <div key={index} className="flex gap-2">
+              <input
+                className={`flex-1 p-2 border text-black rounded-lg ${
+                  errors ? "border-red-500" : "border-gray-300"
+                }`}
+                type={isNumber ? "number" : "text"}
+                value={item}
+                onChange={(e) => handleItemChange(index, e.target.value)}
+                disabled={isProcessing}
+                required
+              />
+              <Button
+                type="button"
+                onClick={() => handleRemoveItem(index)}
+                variant="secondary"
+                className="px-2 py-1 text-red-600"
+              >
+                Remove
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            onClick={handleAddItem}
+            variant="secondary"
+            className="w-full text-blue-600"
+          >
+            Add {name}
+          </Button>
+        </div>
+        {errors && <p className="mt-1 text-sm text-red-600">{errors}</p>}
+      </div>
+    );
   }
 }

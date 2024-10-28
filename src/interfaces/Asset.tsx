@@ -18,7 +18,7 @@ export interface Asset {
   artistReputation?: string; //Artwork Type
   culturalInfluence?: string; //Artwork Type
   exhibitionHistory?: string[]; //Artwork Type
-  rarity?: string; //Artwork/NFT Type
+  rarity?: string; //Artwork & NFT Type
   creatorReputation?: string; //NFT Type
   utility?: string; //NFT Type
   location?: string; //RealEstate Type
