@@ -28,10 +28,10 @@ export default function ConnectWallet({ setIsModalOpen }: ConnectWalletProps) {
     <div className="relative">
       <Button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-red-800 hover:bg-blue-700 text-sm font-bold text-white"
+        className="bg-red-800 hover:bg-blue-700 text-sm font-bold text-white flex items-center"
         variant="secondary"
       >
-        {account.slice(0, 6)}...{account.slice(-4)}
+        Account: {account.slice(0, 6)}...{account.slice(-4)}
       </Button>
 
       {isOpen && (
