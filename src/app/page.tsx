@@ -13,9 +13,10 @@ const tabs = [
   { id: Pages.HOME, label: "Home" },
   { id: Pages.ACCOUNT, label: "My Account" },
 ];
-
 export default function Home() {
   const [activeTab, setActiveTab] = useState(Pages.HOME);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
     <Web3Provider>
       <SmartContractProvider>
@@ -24,14 +25,18 @@ export default function Home() {
             <div className="max-w-6xl mx-auto">
               <div className="mb-8 flex justify-between items-center">
                 <h1 className="text-3xl font-bold text-black"> Marketplace</h1>
-                <ConnectWallet />
+                <ConnectWallet setIsModalOpen={setIsModalOpen} />{" "}
               </div>
               <Tabs
                 tabs={tabs}
                 activeTab={activeTab}
                 onTabChange={(tabId: string) => setActiveTab(tabId as Pages)}
               />
-              <AssetGrid activeTab={activeTab} />
+              <AssetGrid
+                activeTab={activeTab}
+                isModalOpen={isModalOpen}
+                setIsModalOpen={setIsModalOpen}
+              />
             </div>
           </div>
         </AssetsProvider>

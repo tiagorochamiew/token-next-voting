@@ -1,5 +1,5 @@
 // components/AssetGrid.tsx
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { useWeb3 } from "../contexts/Web3Context";
 import { useAssets } from "../contexts/AssetsContext";
 import { useSmartContract } from "../contexts/SmartContractContext";
@@ -10,14 +10,19 @@ import AssetModal from "./AssetModal";
 
 interface AssetGridProps {
   activeTab: string;
+  isModalOpen: boolean;
+  setIsModalOpen?: (isOpen: boolean) => void;
 }
 
-export default function AssetGrid({ activeTab }: AssetGridProps) {
+export default function AssetGrid({
+  activeTab,
+  isModalOpen,
+  setIsModalOpen,
+}: AssetGridProps) {
   const { account } = useWeb3();
   const { assets, isLoading, error, fetchAssets, hasMore, currentPage } =
     useAssets();
   const { mintAsset } = useSmartContract();
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchAssets(account, 1);
@@ -57,8 +62,10 @@ export default function AssetGrid({ activeTab }: AssetGridProps) {
   );
 
   const handleModalClose = useCallback(() => {
-    setIsModalOpen(false);
-  }, []);
+    if (setIsModalOpen) {
+      setIsModalOpen(false);
+    }
+  }, [setIsModalOpen]);
 
   if (error) {
     return (
@@ -83,16 +90,10 @@ export default function AssetGrid({ activeTab }: AssetGridProps) {
   return (
     <div>
       {activeTab === Pages.ACCOUNT && (
-        <div className="flex justify-between items-center mb-6">
-          <Button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            Create F-NFT
-          </Button>
-        </div>
+        <>
+          <div className="text-black">{"Warning: In development"}</div>
+        </>
       )}
-
       {activeTab === Pages.HOME && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -110,7 +111,7 @@ export default function AssetGrid({ activeTab }: AssetGridProps) {
               <Button
                 onClick={loadPreviousPage}
                 variant="secondary"
-                className="bg-blue-600 hover:bg-blue-700 text-black"
+                className="bg-blue-200 hover:bg-blue-700 text-black"
               >
                 Previous
               </Button>

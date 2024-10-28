@@ -10,6 +10,7 @@ import {
 import useSWR from "swr";
 import { fetcher } from "@/api/fetcher";
 import { GETResponse } from "@/interfaces/GETResponse";
+import { ITEMS_PER_PAGE } from "@/utils/Constants";
 
 interface AssetsContextType {
   assets: Asset[];
@@ -32,7 +33,6 @@ export function AssetsProvider({ children }: AssetsProviderProps) {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const ITEMS_PER_PAGE = 6;
 
   const {
     data: response,

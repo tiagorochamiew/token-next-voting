@@ -1,25 +1,45 @@
-// components/ConnectWallet.js
+// components/ConnectWallet.tsx
+import { useState } from "react";
 import { useWeb3 } from "../contexts/Web3Context";
 import { Button } from "@/components/ui/Button";
+import WalletModal from "./WalletModal";
 
-export default function ConnectWallet() {
+interface ConnectWalletProps {
+  setIsModalOpen: (isOpen: boolean) => void; // Update this to match AssetGrid's setter
+}
+
+export default function ConnectWallet({ setIsModalOpen }: ConnectWalletProps) {
   const { account, connectWallet, isLoading } = useWeb3();
+  const [isOpen, setIsOpen] = useState(false);
 
-  if (account) {
+  if (!account) {
     return (
-      <div className="text-sm font-bold text-red-800">
-        Connected: {account.slice(0, 6)}...{account.slice(-4)}
-      </div>
+      <Button
+        onClick={connectWallet}
+        disabled={isLoading}
+        className="bg-blue-600 hover:bg-blue-700 text-white"
+      >
+        {isLoading ? "Connecting..." : "Connect Wallet"}
+      </Button>
     );
   }
 
   return (
-    <Button
-      onClick={connectWallet}
-      disabled={isLoading}
-      className="bg-blue-600 hover:bg-blue-700 text-white"
-    >
-      {isLoading ? "Connecting..." : "Connect Wallet"}
-    </Button>
+    <div className="relative">
+      <Button
+        onClick={() => setIsOpen(!isOpen)}
+        className="bg-red-800 hover:bg-blue-700 text-sm font-bold text-white"
+        variant="secondary"
+      >
+        {account.slice(0, 6)}...{account.slice(-4)}
+      </Button>
+
+      {isOpen && (
+        <WalletModal
+          setIsOpen={setIsOpen}
+          setIsModalOpen={setIsModalOpen} // Pass it through
+        />
+      )}
+    </div>
   );
 }
