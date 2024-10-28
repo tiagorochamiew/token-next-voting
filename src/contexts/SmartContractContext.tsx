@@ -9,14 +9,24 @@ import {
 import { ethers } from "ethers";
 import { useWeb3 } from "./Web3Context";
 import contract from "../../artifacts/contracts/koltena.sol/fnft.json";
+import { ParseMintLogs } from "@/utils/Parser";
+import { MintResult } from "@/interfaces/MintResult";
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "";
 const CONTRACT_ABI = contract.abi;
 
+if (!CONTRACT_ADDRESS) {
+  throw new Error("Contract address not configured");
+}
+
+if (!CONTRACT_ABI) {
+  throw new Error("Contract Abi not configured");
+}
+
 interface SmartContractContextType {
   isLoading: boolean;
   error: string | null;
-  mintAsset: (numTokens: number) => Promise<string>;
+  mintAsset: (numTokens: number) => Promise<MintResult>;
   clearError: () => void;
 }
 
@@ -47,6 +57,7 @@ export function SmartContractProvider({
 
   const mintAsset = useCallback(
     async (tokens: number) => {
+      console.log("Minting " + tokens + " tokens");
       try {
         setIsLoading(true);
         setError(null);
@@ -57,9 +68,14 @@ export function SmartContractProvider({
 
         const contract = await getContract();
         const tx = await contract.mint(BigInt(tokens));
-        await tx.wait();
-        console.log("Minted", tx.hash);
-        return tx.hash;
+        const receipt = await tx.wait();
+
+        const koltenaId = ParseMintLogs(receipt.logs[0].data).id;
+        console.log("Minted asset with id: " + koltenaId);
+        return {
+          txHash: tx.hash,
+          koltenaId,
+        };
       } catch (err) {
         const message = err instanceof Error ? err.message : "Minting failed";
         setError(message);

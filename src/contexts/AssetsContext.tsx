@@ -3,18 +3,22 @@ import {
   createContext,
   useContext,
   useState,
+  useEffect,
   ReactNode,
   useCallback,
 } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/api/fetcher";
+import { GETResponse } from "@/interfaces/GETResponse";
 
 interface AssetsContextType {
   assets: Asset[];
   isLoading: boolean;
   error: string | null;
-  fetchAssets: (address: string) => void;
+  fetchAssets: (address: string, page: number) => void;
   setError: (error: string) => void;
+  hasMore: boolean;
+  currentPage: number;
 }
 
 const AssetsContext = createContext<AssetsContextType | undefined>(undefined);
@@ -23,22 +27,22 @@ interface AssetsProviderProps {
   children: ReactNode;
 }
 
-interface AssetsResponse {
-  success: boolean;
-  data: Asset[];
-}
-
 export function AssetsProvider({ children }: AssetsProviderProps) {
   const [currentAddress, setCurrentAddress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const ITEMS_PER_PAGE = 6;
 
   const {
     data: response,
     error: swrError,
     isLoading,
-  } = useSWR<AssetsResponse>(
-    currentAddress ? "assets" : null,
-    () => fetcher<AssetsResponse>("assets"),
+  } = useSWR<GETResponse>(
+    currentAddress
+      ? `assets?pageIndex=${currentPage}&pagesIZE=${ITEMS_PER_PAGE}`
+      : null,
+    fetcher,
     {
       revalidateOnFocus: false,
       onError: (err) => {
@@ -47,10 +51,17 @@ export function AssetsProvider({ children }: AssetsProviderProps) {
     }
   );
 
-  const fetchAssets = useCallback((address: string) => {
+  const fetchAssets = useCallback((address: string, page: number = 1) => {
     setCurrentAddress(address);
+    setCurrentPage(page);
     setError(null);
   }, []);
+
+  useEffect(() => {
+    if (response?.data) {
+      setHasMore(response.data.length === ITEMS_PER_PAGE);
+    }
+  }, [response]);
 
   if (isLoading) {
     return <div className="text-center py-8">Loading assets...</div>;
@@ -72,6 +83,8 @@ export function AssetsProvider({ children }: AssetsProviderProps) {
         error: error || (swrError ? swrError.message : null),
         fetchAssets,
         setError,
+        hasMore,
+        currentPage,
       }}
     >
       {children}

@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useWeb3 } from "../contexts/Web3Context";
 import { useAssets } from "../contexts/AssetsContext";
+import { useSmartContract } from "../contexts/SmartContractContext";
 import { Button } from "@/components/ui/Button";
 import { Pages } from "@/enums/Pages";
 import AssetCard from "./AssetCard";
@@ -13,12 +14,47 @@ interface AssetGridProps {
 
 export default function AssetGrid({ activeTab }: AssetGridProps) {
   const { account } = useWeb3();
-  const { assets, isLoading, error, fetchAssets } = useAssets();
+  const { assets, isLoading, error, fetchAssets, hasMore, currentPage } =
+    useAssets();
+  const { mintAsset } = useSmartContract();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchAssets(account);
+    fetchAssets(account, 1);
   }, [activeTab, account, fetchAssets]);
+
+  const loadNextPage = useCallback(() => {
+    if (!isLoading && hasMore) {
+      fetchAssets(account, currentPage + 1);
+    }
+  }, [account, hasMore, currentPage, fetchAssets, isLoading]);
+
+  const loadPreviousPage = useCallback(() => {
+    if (!isLoading && currentPage != 1) {
+      fetchAssets(account, currentPage - 1);
+    }
+  }, [account, currentPage, fetchAssets, isLoading]);
+
+  const loadFirstPage = useCallback(() => {
+    if (!isLoading && currentPage != 1) {
+      fetchAssets(account, 1);
+    }
+  }, [account, currentPage, fetchAssets, isLoading]);
+
+  const handleMint = useCallback(
+    async (numTokens: number) => {
+      try {
+        const { txHash, koltenaId } = await mintAsset(numTokens);
+        await fetchAssets(account, 1);
+        console.log("Minted asset:", { txHash, koltenaId });
+        return { txHash, koltenaId };
+      } catch (error) {
+        console.error("Minting error:", error);
+        throw error;
+      }
+    },
+    [mintAsset, fetchAssets, account]
+  );
 
   const handleModalClose = useCallback(() => {
     setIsModalOpen(false);
@@ -56,17 +92,67 @@ export default function AssetGrid({ activeTab }: AssetGridProps) {
           </Button>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {activeTab === Pages.HOME &&
-          assets.map((asset) => <AssetCard key={asset.id} asset={asset} />)}
-      </div>
+
+      {activeTab === Pages.HOME && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {assets.map((asset) => (
+              <AssetCard key={asset.id} asset={asset} />
+            ))}
+          </div>
+
+          {isLoading && (
+            <div className="text-center py-4">Loading more assets...</div>
+          )}
+
+          {!isLoading && currentPage != 1 && (
+            <div className="text-center py-4">
+              <Button
+                onClick={loadPreviousPage}
+                variant="secondary"
+                className="bg-blue-600 hover:bg-blue-700 text-black"
+              >
+                Previous
+              </Button>
+            </div>
+          )}
+
+          {!isLoading && hasMore && (
+            <div className="text-center py-4">
+              <Button
+                onClick={loadNextPage}
+                variant="secondary"
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                Load More
+              </Button>
+            </div>
+          )}
+
+          {!isLoading && currentPage != 1 && (
+            <div className="text-center py-4">
+              <Button
+                onClick={loadFirstPage}
+                variant="secondary"
+                className="bg-red-400 hover:bg-red-500 text-white-300"
+              >
+                Reset
+              </Button>
+            </div>
+          )}
+
+          {!isLoading && assets.length === 0 && (
+            <div className="text-center py-8 text-gray-600">
+              No assets available
+            </div>
+          )}
+        </>
+      )}
 
       <AssetModal
         isOpen={isModalOpen}
         onClose={handleModalClose}
-        onMint={function (): Promise<string> {
-          throw new Error("Function not implemented.");
-        }}
+        onMint={handleMint}
       />
     </div>
   );
