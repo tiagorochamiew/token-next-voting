@@ -3,9 +3,9 @@ import { useEffect, useCallback } from "react";
 import { useWeb3 } from "../contexts/Web3Context";
 import { useAssets } from "../contexts/AssetsContext";
 import { useSmartContract } from "../contexts/SmartContractContext";
-import { Button } from "@/components/ui/Button";
 import { Pages } from "@/enums/Pages";
-import AssetCard from "./AssetCard";
+import { HomeTab } from "./tabs/Home";
+import { AccountTab } from "./tabs/Account";
 import AssetModal from "./AssetModal";
 
 interface AssetGridProps {
@@ -35,13 +35,13 @@ export default function AssetGrid({
   }, [account, hasMore, currentPage, fetchAssets, isLoading]);
 
   const loadPreviousPage = useCallback(() => {
-    if (!isLoading && currentPage != 1) {
+    if (!isLoading && currentPage !== 1) {
       fetchAssets(account, currentPage - 1);
     }
   }, [account, currentPage, fetchAssets, isLoading]);
 
   const loadFirstPage = useCallback(() => {
-    if (!isLoading && currentPage != 1) {
+    if (!isLoading && currentPage !== 1) {
       fetchAssets(account, 1);
     }
   }, [account, currentPage, fetchAssets, isLoading]);
@@ -75,7 +75,7 @@ export default function AssetGrid({
     );
   }
 
-  if (isLoading) {
+  if (isLoading && currentPage === 1) {
     return <div className="text-center py-8">Loading assets...</div>;
   }
 
@@ -86,70 +86,33 @@ export default function AssetGrid({
       </div>
     );
   }
+  let content;
+
+  switch (activeTab) {
+    case Pages.HOME:
+      content = (
+        <HomeTab
+          assets={assets}
+          isLoading={isLoading}
+          hasMore={hasMore}
+          currentPage={currentPage}
+          loadNextPage={loadNextPage}
+          loadPreviousPage={loadPreviousPage}
+          loadFirstPage={loadFirstPage}
+        />
+      );
+      break;
+    case Pages.ACCOUNT:
+      content = <AccountTab />;
+      break;
+    default:
+      content = <div className="text-black">{"Warning: In development"}</div>;
+      break;
+  }
 
   return (
     <div>
-      {activeTab === Pages.ACCOUNT && (
-        <>
-          <div className="text-black">{"Warning: In development"}</div>
-        </>
-      )}
-      {activeTab === Pages.HOME && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {assets.map((asset) => (
-              <AssetCard key={asset.id} asset={asset} />
-            ))}
-          </div>
-
-          {isLoading && (
-            <div className="text-center py-4">Loading more assets...</div>
-          )}
-
-          {!isLoading && currentPage != 1 && (
-            <div className="text-center py-4">
-              <Button
-                onClick={loadPreviousPage}
-                variant="secondary"
-                className="bg-blue-200 hover:bg-blue-700 text-black"
-              >
-                Previous
-              </Button>
-            </div>
-          )}
-
-          {!isLoading && hasMore && (
-            <div className="text-center py-4">
-              <Button
-                onClick={loadNextPage}
-                variant="secondary"
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                Load More
-              </Button>
-            </div>
-          )}
-
-          {!isLoading && currentPage != 1 && (
-            <div className="text-center py-4">
-              <Button
-                onClick={loadFirstPage}
-                variant="secondary"
-                className="bg-red-400 hover:bg-red-500 text-white-300"
-              >
-                Reset
-              </Button>
-            </div>
-          )}
-
-          {!isLoading && assets.length === 0 && (
-            <div className="text-center py-8 text-gray-600">
-              No assets available
-            </div>
-          )}
-        </>
-      )}
-
+      {content}
       <AssetModal
         isOpen={isModalOpen}
         onClose={handleModalClose}
