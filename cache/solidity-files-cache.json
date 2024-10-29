@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\Tiago Rocha\\source\\repos\\koltena-frontoffice\\rwa-app\\contracts\\koltena.sol": {
-      "lastModificationDate": 1729852699870,
-      "contentHash": "075379cc1eb7d7b0ede5e6b124c24ba6",
+      "lastModificationDate": 1730220676174,
+      "contentHash": "ffdefba98467f01ce3e08d7129808c60",
       "sourceName": "contracts/koltena.sol",
       "solcConfig": {
         "version": "0.8.8",

@@ -28,6 +28,11 @@ interface SmartContractContextType {
   error: string | null;
   mintAsset: (numTokens: number) => Promise<MintResult>;
   clearError: () => void;
+  fetchAccountAssets: (address: string) => Promise<number[]>;
+  fetchAccountBalances: (
+    address: string,
+    assets: number[]
+  ) => Promise<number[]>;
 }
 
 const SmartContractContext = createContext<
@@ -54,6 +59,37 @@ export function SmartContractProvider({
     const signer = await provider.getSigner();
     return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
   }, []);
+
+  const fetchAccountBalances = async (
+    address: string,
+    assets: number[]
+  ): Promise<number[]> => {
+    try {
+      const contract = await getContract();
+
+      const addresses = Array(assets.length).fill(address);
+
+      const response = await contract.balanceOfBatch(addresses, assets);
+
+      return response.map((balance: bigint) => Number(balance));
+    } catch (error) {
+      console.error("Error fetching account balances:", error);
+      throw error;
+    }
+  };
+
+  const fetchAccountAssets = async (address: string): Promise<number[]> => {
+    try {
+      const contract = await getContract();
+
+      const response = await contract.addressAssets(address);
+
+      return response.map((asset: bigint) => Number(asset));
+    } catch (error) {
+      console.error("Error fetching account assets:", error);
+      throw error;
+    }
+  };
 
   const mintAsset = useCallback(
     async (tokens: number) => {
@@ -97,6 +133,8 @@ export function SmartContractProvider({
         error,
         mintAsset,
         clearError,
+        fetchAccountAssets,
+        fetchAccountBalances,
       }}
     >
       {children}

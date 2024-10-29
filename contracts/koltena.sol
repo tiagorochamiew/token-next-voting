@@ -3,6 +3,11 @@ pragma solidity ^0.8.8;
 
 interface fnft {
     // Get info
+    function balanceOfBatch(
+        address[] calldata _owners,
+        uint256[] calldata _ids
+    ) external view returns (uint256[] memory);
+
     function assetOwners(
         uint256 tokenId
     ) external view returns (address[] memory);

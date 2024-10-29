@@ -6,7 +6,7 @@ import { useSmartContract } from "../contexts/SmartContractContext";
 import { Pages } from "@/enums/Pages";
 import { HomeTab } from "./tabs/Home";
 import { AccountTab } from "./tabs/Account";
-import AssetModal from "./AssetModal";
+import AssetModal from "./FormModal";
 
 interface AssetGridProps {
   activeTab: string;
