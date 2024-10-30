@@ -1,7 +1,9 @@
 // components/tabs/Home.tsx
+import { useState } from "react";
 import { Asset } from "@/interfaces/Asset";
 import { Button } from "@/components/ui/Button";
 import AssetCard from "../AssetCard";
+import AssetModal from "../modals/AssetModal";
 
 interface HomeTabProps {
   assets: Asset[];
@@ -22,11 +24,21 @@ export function HomeTab({
   loadPreviousPage,
   loadFirstPage,
 }: HomeTabProps) {
+  const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
+
+  const handleTitleClick = (koltenaId: number) => {
+    setSelectedAssetId(koltenaId);
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {assets.map((asset) => (
-          <AssetCard key={asset.id} asset={asset} />
+          <AssetCard
+            key={asset.id}
+            asset={asset}
+            onTitleClick={handleTitleClick}
+          />
         ))}
       </div>
 
@@ -71,6 +83,12 @@ export function HomeTab({
           No assets available
         </div>
       )}
+
+      <AssetModal
+        isOpen={selectedAssetId !== null}
+        onClose={() => setSelectedAssetId(null)}
+        asset={assets.find((a) => a.koltenaId === selectedAssetId) || null}
+      />
     </>
   );
 }

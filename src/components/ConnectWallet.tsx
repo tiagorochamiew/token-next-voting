@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useWeb3 } from "../contexts/Web3Context";
 import { Button } from "@/components/ui/Button";
-import WalletModal from "./WalletModal";
+import WalletModal from "./modals/WalletModal";
 
 interface ConnectWalletProps {
   setIsModalOpen: (isOpen: boolean) => void;

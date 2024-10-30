@@ -1,16 +1,16 @@
 // components/modals/FormModal.tsx
 import React, { useState } from "react";
-import { Button } from "./ui/Button";
-import { Card, CardContent, CardHeader } from "./ui/Card";
-import { Asset } from "../interfaces/Asset";
+import { Button } from "../ui/Button";
+import { Card, CardContent, CardHeader } from "../ui/Card";
+import { Asset } from "../../interfaces/Asset";
 import { MintResult } from "@/interfaces/MintResult";
 import { patcher } from "@/api/patcher";
-import { AssetTypeFields } from "./forms/AssetTypeFields";
-import { GenericNumberInput } from "./forms/GenericNumberInput";
-import { GenericStringInput } from "./forms/GenericStringInput";
-import { GenericArrayInput } from "./forms/GenericArrayInput";
-import { validateAssetForm } from "../utils/Validators";
-import { formatFieldName } from "../utils/Formatter";
+import { AssetTypeFields } from "../forms/AssetTypeFields";
+import { GenericNumberInput } from "../forms/GenericNumberInput";
+import { GenericStringInput } from "../forms/GenericStringInput";
+import { GenericArrayInput } from "../forms/GenericArrayInput";
+import { validateAssetForm } from "../../utils/Validators";
+import { formatFieldName } from "../../utils/Formatter";
 import { ASSET_TYPES } from "@/utils/Constants";
 import { toast } from "react-toastify";
 

@@ -2,10 +2,15 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import Image from "next/image";
+import { ImageModal } from "./modals/ImageModal";
 import { Asset } from "@/interfaces/Asset";
-import { ImageModal } from "./ImageModal";
 
-export default function AssetCard({ asset }: { asset: Asset }) {
+interface AssetCardProps {
+  asset: Asset;
+  onTitleClick?: (koltenaId: number) => void;
+}
+
+export default function AssetCard({ asset, onTitleClick }: AssetCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -25,7 +30,12 @@ export default function AssetCard({ asset }: { asset: Asset }) {
       <Card className="overflow-hidden">
         <CardHeader className="p-4">
           <h1 className="text-sm text-black">{asset.type}</h1>
-          <h3 className="text-lg font-semibold text-blue-800">{asset.title}</h3>
+          <h3
+            className="text-lg font-semibold text-blue-800 cursor-pointer hover:text-blue-600"
+            onClick={() => onTitleClick?.(asset.koltenaId)}
+          >
+            {asset.title}
+          </h3>
         </CardHeader>
         <CardContent className="p-4">
           <div

@@ -26,9 +26,10 @@ if (!CONTRACT_ABI) {
 interface SmartContractContextType {
   isLoading: boolean;
   error: string | null;
-  mintAsset: (numTokens: number) => Promise<MintResult>;
   clearError: () => void;
+  mintAsset: (numTokens: number) => Promise<MintResult>;
   fetchAccountAssets: (address: string) => Promise<number[]>;
+  fetchAccountBalance: (address: string, asset: number) => Promise<number>;
   fetchAccountBalances: (
     address: string,
     assets: number[]
@@ -59,6 +60,22 @@ export function SmartContractProvider({
     const signer = await provider.getSigner();
     return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
   }, []);
+
+  const fetchAccountBalance = async (
+    address: string,
+    asset: number
+  ): Promise<number> => {
+    try {
+      const contract = await getContract();
+
+      const response = await contract.balanceOf(address, asset);
+
+      return Number(response);
+    } catch (error) {
+      console.error("Error fetching account balances:", error);
+      throw error;
+    }
+  };
 
   const fetchAccountBalances = async (
     address: string,
@@ -131,8 +148,9 @@ export function SmartContractProvider({
       value={{
         isLoading,
         error,
-        mintAsset,
         clearError,
+        mintAsset,
+        fetchAccountBalance,
         fetchAccountAssets,
         fetchAccountBalances,
       }}
