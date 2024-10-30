@@ -7,7 +7,7 @@ import {
   ReactNode,
 } from "react";
 import { ethers } from "ethers";
-import { useWeb3 } from "./Web3Context";
+import { useWeb3 } from "@/contexts/Web3Context";
 import contract from "../../artifacts/contracts/koltena.sol/fnft.json";
 import { ParseMintLogs } from "@/utils/Parser";
 import { MintResult } from "@/interfaces/MintResult";

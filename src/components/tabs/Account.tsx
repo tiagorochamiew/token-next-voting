@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useWeb3 } from "@/contexts/Web3Context";
 import { useSmartContract } from "@/contexts/SmartContractContext";
-import AssetCard from "../AssetCard";
+import AssetCard from "@/components/AssetCard";
 
 interface AccountAsset {
   id: number;

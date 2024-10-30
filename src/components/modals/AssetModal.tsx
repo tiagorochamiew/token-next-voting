@@ -6,8 +6,8 @@ import { useSmartContract } from "@/contexts/SmartContractContext";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Asset } from "@/interfaces/Asset";
-import { DetailItem } from "../details/Item";
-import { ArrayDetail } from "../details/Array";
+import { DetailItem } from "@/components/details/Item";
+import { ArrayDetail } from "@/components/details/Array";
 
 interface AssetModalProps {
   isOpen: boolean;

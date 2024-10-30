@@ -1,12 +1,12 @@
 // components/AssetGrid.tsx
 import { useEffect, useCallback } from "react";
-import { useWeb3 } from "../contexts/Web3Context";
-import { useAssets } from "../contexts/AssetsContext";
-import { useSmartContract } from "../contexts/SmartContractContext";
+import { useWeb3 } from "@/contexts/Web3Context";
+import { useAssets } from "@/contexts/AssetsContext";
+import { useSmartContract } from "@/contexts/SmartContractContext";
 import { Pages } from "@/enums/Pages";
-import { HomeTab } from "./tabs/Home";
-import { AccountTab } from "./tabs/Account";
-import AssetModal from "./modals/FormModal";
+import { HomeTab } from "@/components/tabs/Home";
+import { AccountTab } from "@/components/tabs/Account";
+import AssetModal from "@/components/modals/FormModal";
 
 interface AssetGridProps {
   activeTab: string;

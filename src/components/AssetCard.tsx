@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import Image from "next/image";
-import { ImageModal } from "./modals/ImageModal";
+import { ImageModal } from "@/components/modals/ImageModal";
 import { Asset } from "@/interfaces/Asset";
 
 interface AssetCardProps {

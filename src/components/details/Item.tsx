@@ -1,3 +1,5 @@
+// components/details/Item.tsx
+
 export function DetailItem({
   label,
   value,

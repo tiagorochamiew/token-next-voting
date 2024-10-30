@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { Asset } from "@/interfaces/Asset";
 import { Button } from "@/components/ui/Button";
-import AssetCard from "../AssetCard";
-import AssetModal from "../modals/AssetModal";
+import AssetCard from "@/components/AssetCard";
+import AssetModal from "@/components/modals/AssetModal";
 
 interface HomeTabProps {
   assets: Asset[];

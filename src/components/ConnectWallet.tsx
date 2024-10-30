@@ -1,8 +1,8 @@
 // components/ConnectWallet.tsx
 import { useState } from "react";
-import { useWeb3 } from "../contexts/Web3Context";
+import { useWeb3 } from "@/contexts/Web3Context";
 import { Button } from "@/components/ui/Button";
-import WalletModal from "./modals/WalletModal";
+import WalletModal from "@/components/modals/WalletModal";
 
 interface ConnectWalletProps {
   setIsModalOpen: (isOpen: boolean) => void;

@@ -1,3 +1,5 @@
+// components/details/Array.tsx
+
 export function ArrayDetail({
   label,
   values,

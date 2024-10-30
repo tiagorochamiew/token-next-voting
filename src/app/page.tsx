@@ -1,13 +1,13 @@
 // app/page.tsx
 "use client";
 import { useState } from "react";
-import { Web3Provider } from "../contexts/Web3Context";
-import { AssetsProvider } from "../contexts/AssetsContext";
+import { Web3Provider } from "@/contexts/Web3Context";
+import { AssetsProvider } from "@/contexts/AssetsContext";
 import { SmartContractProvider } from "@/contexts/SmartContractContext";
-import { Tabs } from "../components/ui/Tab";
+import { Tabs } from "@/components/ui/Tab";
 import { Pages } from "@/enums/Pages";
-import ConnectWallet from "../components/ConnectWallet";
-import AssetGrid from "../components/AssetGrid";
+import ConnectWallet from "@/components/ConnectWallet";
+import AssetGrid from "@/components/AssetGrid";
 
 const tabs = [
   { id: Pages.HOME, label: "Home" },

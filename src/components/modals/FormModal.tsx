@@ -1,16 +1,16 @@
 // components/modals/FormModal.tsx
 import React, { useState } from "react";
-import { Button } from "../ui/Button";
-import { Card, CardContent, CardHeader } from "../ui/Card";
-import { Asset } from "../../interfaces/Asset";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import { Asset } from "@/interfaces/Asset";
 import { MintResult } from "@/interfaces/MintResult";
 import { patcher } from "@/api/patcher";
-import { AssetTypeFields } from "../forms/AssetTypeFields";
-import { GenericNumberInput } from "../forms/GenericNumberInput";
-import { GenericStringInput } from "../forms/GenericStringInput";
-import { GenericArrayInput } from "../forms/GenericArrayInput";
-import { validateAssetForm } from "../../utils/Validators";
-import { formatFieldName } from "../../utils/Formatter";
+import { AssetTypeFields } from "@/components/forms/AssetTypeFields";
+import { GenericNumberInput } from "@/components/forms/GenericNumberInput";
+import { GenericStringInput } from "@/components/forms/GenericStringInput";
+import { GenericArrayInput } from "@/components/forms/GenericArrayInput";
+import { validateAssetForm } from "@/utils/Validators";
+import { formatFieldName } from "@/utils/Formatter";
 import { ASSET_TYPES } from "@/utils/Constants";
 import { toast } from "react-toastify";
 
@@ -113,12 +113,14 @@ export default function FormModal({ isOpen, onClose, onMint }: FormModalProps) {
         console.error("Error creating asset:", postResponse);
         return;
       }
-      toast.success("Asset created successfully, minting tokens...");
+      toast.success("Asset created successfully, minting tokens@/components.");
       console.log("Created asset:", postResponse?.data);
       const asset = (postResponse?.data as Asset) || {};
       console.log("Minting asset with tokens:", asset.koltenaTokens);
       const { txHash, koltenaId } = await onMint(asset.koltenaTokens);
-      toast.success("Minted created successfully, updating database...");
+      toast.success(
+        "Minted created successfully, updating database@/components."
+      );
       console.log("Minted asset:", { txHash, koltenaId });
       if (!koltenaId) {
         console.error("Error minting asset: koltenaId not found");
