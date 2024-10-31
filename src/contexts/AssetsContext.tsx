@@ -40,7 +40,7 @@ export function AssetsProvider({ children }: AssetsProviderProps) {
     isLoading,
   } = useSWR<GETResponse>(
     currentAddress
-      ? `assets?pageIndex=${currentPage}&pagesIZE=${ITEMS_PER_PAGE}`
+      ? `assets?pageIndex=${currentPage}&pageSize=${ITEMS_PER_PAGE}`
       : null,
     fetcher,
     {
