@@ -1,54 +1,15 @@
 // components/tabs/Account.tsx
-import { useEffect, useState } from "react";
 import { useWeb3 } from "@/contexts/Web3Context";
-import { useSmartContract } from "@/contexts/SmartContractContext";
 import AssetCard from "@/components/AssetCard";
+import { Asset } from "@/interfaces/Asset";
 
-interface AccountAsset {
-  id: number;
-  balance: number;
+interface AccountTabProps {
+  assets: Asset[];
+  isLoading: boolean;
+  error: string | null;
 }
-
-export function AccountTab() {
+export function AccountTab({ assets, isLoading, error }: AccountTabProps) {
   const { account } = useWeb3();
-  const { fetchAccountBalances, fetchAccountAssets } = useSmartContract();
-  const [accountAssets, setAccountAssets] = useState<AccountAsset[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const loadAccountAssets = async () => {
-      if (!account) return;
-
-      try {
-        setIsLoading(true);
-        setError("");
-
-        const assetIds = await fetchAccountAssets(account);
-
-        if (assetIds.length > 0) {
-          const balances = await fetchAccountBalances(account, assetIds);
-          const assets = assetIds.map((id, index) => ({
-            id,
-            balance: balances[index],
-          }));
-
-          setAccountAssets(assets);
-        } else {
-          setAccountAssets([]);
-        }
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Failed to fetch account assets";
-        setError(message);
-        console.error("Error loading account assets:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadAccountAssets();
-  }, [account, fetchAccountBalances, fetchAccountAssets]);
 
   if (error) {
     return (
@@ -70,7 +31,7 @@ export function AccountTab() {
     );
   }
 
-  if (accountAssets.length === 0) {
+  if (assets.length === 0) {
     return (
       <div className="text-center py-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">My Assets</h2>
@@ -83,25 +44,26 @@ export function AccountTab() {
     <div>
       <h2 className="text-xl font-semibold text-gray-800 mb-6">My Assets</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {accountAssets.map((asset) => (
+        {assets.map((asset: Asset) => (
           <div key={asset.id}>
             <AssetCard
               asset={{
-                type: "koltena",
+                type: asset.type || "",
                 id: asset.id.toString(),
-                koltenaId: asset.id,
-                koltenaTokens: asset.balance,
-                title: `Asset #${asset.id}`,
-                url: "",
-                price: 0,
-                condition: "",
-                age: "",
-                size: "",
-                liquidity: "",
-                historicalPerformance: [],
-                marketTrends: [],
-                externalEconomicFactors: [],
-                volatility: [],
+                koltenaId: asset.koltenaId || 0,
+                koltenaTokens: asset.koltenaTokens || 0,
+                balance: asset.balance || 0,
+                title: asset.title || "",
+                url: asset.url || "",
+                price: asset.price || 0,
+                condition: asset.condition || "",
+                age: asset.age || "",
+                size: asset.size || "",
+                liquidity: asset.liquidity || "",
+                historicalPerformance: asset.historicalPerformance || [],
+                marketTrends: asset.marketTrends || [],
+                externalEconomicFactors: asset.externalEconomicFactors || [],
+                volatility: asset.volatility || [],
               }}
             />
           </div>

@@ -58,7 +58,7 @@ export default function FormModal({ isOpen, onClose, onMint }: FormModalProps) {
         type: "Real Estate",
         title: "Testing title",
         koltenaTokens: 10,
-        url: process.env.NEXT_PUBLIC_DEFAULT_URL || "",
+        url: process.env.DEFAULT_URL || "",
         price: 560,
         condition: "testing condition",
         age: "testing age",

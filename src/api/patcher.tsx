@@ -1,12 +1,13 @@
-import { POSTResponse } from "@/interfaces/POSTResponse";
-import { PUTResponse } from "@/interfaces/PUTResponse";
+import { POSTResponse } from "@/interfaces/Response";
+import { PUTResponse } from "@/interfaces/Response";
+import apiConfig from "@/lib/config";
 
 export async function patcher<T>(
   url: string,
   method: string,
   formData: T
 ): Promise<POSTResponse | PUTResponse> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${url}`, {
+  const response = await fetch(`${apiConfig.apiUrl}/${url}`, {
     method: method.toUpperCase(),
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(formData),

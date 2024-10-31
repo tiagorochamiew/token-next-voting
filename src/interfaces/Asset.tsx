@@ -3,6 +3,7 @@ export interface Asset {
   type: string;
   koltenaId: number;
   koltenaTokens: number;
+  balance: number;
   title: string;
   url: string;
   price: number;

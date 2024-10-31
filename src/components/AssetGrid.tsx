@@ -1,5 +1,5 @@
 // components/AssetGrid.tsx
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useWeb3 } from "@/contexts/Web3Context";
 import { useAssets } from "@/contexts/AssetsContext";
 import { useSmartContract } from "@/contexts/SmartContractContext";
@@ -7,6 +7,8 @@ import { Pages } from "@/enums/Pages";
 import { HomeTab } from "@/components/tabs/Home";
 import { AccountTab } from "@/components/tabs/Account";
 import AssetModal from "@/components/modals/FormModal";
+import { Asset } from "@/interfaces/Asset";
+import apiConfig from "@/lib/config";
 
 interface AssetGridProps {
   activeTab: string;
@@ -22,11 +24,66 @@ export default function AssetGrid({
   const { account } = useWeb3();
   const { assets, isLoading, error, fetchAssets, hasMore, currentPage } =
     useAssets();
-  const { mintAsset } = useSmartContract();
+  const { fetchAccountBalances, fetchAccountAssets, mintAsset } =
+    useSmartContract();
+  const [accountAssets, setAccountAssets] = useState<Asset[]>([]);
 
+  const loadAccountAssets = useCallback(async () => {
+    if (!account) return null;
+
+    try {
+      const assetIds = await fetchAccountAssets(account);
+      if (assetIds.length <= 0) {
+        return [];
+      }
+
+      const balances = await fetchAccountBalances(account, assetIds);
+      const accountBalances = assetIds.map((id, index) => ({
+        id,
+        balance: balances[index],
+      }));
+      console.log("Fetching...");
+      const response = await fetch(`${apiConfig.apiUrl}/assets`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          balances: accountBalances.map((item) => ({
+            id: item.id,
+            balance: item.balance,
+          })),
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch asset details from backend");
+      }
+      console.log("Fetched koltena assets");
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || "Failed to fetch asset details");
+      }
+
+      return data.data;
+    } catch (err) {
+      console.error("Error loading account assets:", err);
+      throw err;
+    }
+  }, [account, fetchAccountAssets, fetchAccountBalances]);
   useEffect(() => {
-    fetchAssets(account, 1);
-  }, [activeTab, account, fetchAssets]);
+    const loadAssets = async () => {
+      if (activeTab === Pages.HOME) {
+        fetchAssets(account, 1);
+      }
+      if (activeTab === Pages.ACCOUNT) {
+        const data = await loadAccountAssets();
+        setAccountAssets(data);
+      }
+    };
+
+    loadAssets();
+  }, [activeTab, account, fetchAssets, loadAccountAssets]);
 
   const loadNextPage = useCallback(() => {
     if (!isLoading && hasMore) {
@@ -103,7 +160,13 @@ export default function AssetGrid({
       );
       break;
     case Pages.ACCOUNT:
-      content = <AccountTab />;
+      content = (
+        <AccountTab
+          assets={accountAssets}
+          isLoading={isLoading}
+          error={error}
+        />
+      );
       break;
     default:
       content = <div className="text-black">{"Warning: In development"}</div>;

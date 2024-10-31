@@ -1,3 +1,4 @@
+// src/interfaces/Response.tsx
 import { Asset } from "@/interfaces/Asset";
 
 export interface GETResponse {

@@ -99,5 +99,3 @@ export function useAssets() {
   }
   return context;
 }
-
-export type { Asset };

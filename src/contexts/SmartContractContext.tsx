@@ -11,8 +11,9 @@ import { useWeb3 } from "@/contexts/Web3Context";
 import contract from "../../artifacts/contracts/koltena.sol/fnft.json";
 import { ParseMintLogs } from "@/utils/Parser";
 import { MintResult } from "@/interfaces/MintResult";
+import apiConfig from "@/lib/config";
 
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "";
+const CONTRACT_ADDRESS = apiConfig.contractAddress || "";
 const CONTRACT_ABI = contract.abi;
 
 if (!CONTRACT_ADDRESS) {
