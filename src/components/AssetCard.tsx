@@ -1,9 +1,12 @@
 // components/AssetCard.tsx
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import Image from "next/image";
 import { ImageModal } from "@/components/modals/ImageModal";
+import { AssetOwnersModal } from "@/components/modals/AssetOwnersModal";
 import { Asset } from "@/interfaces/Asset";
+import { useSmartContract } from "@/contexts/SmartContractContext";
 
 interface AssetCardProps {
   asset: Asset;
@@ -12,7 +15,9 @@ interface AssetCardProps {
 
 export default function AssetCard({ asset, onTitleClick }: AssetCardProps) {
   const [imageError, setImageError] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [isAssetOwnersModalOpen, setIsAssetOwnersModalOpen] = useState(false);
+  const { fetchAssetOwners, fetchBalancesOfAccounts } = useSmartContract();
 
   const ImageFallback = () => (
     <div className="absolute inset-0 bg-gray-200 flex items-center justify-center rounded">
@@ -23,6 +28,35 @@ export default function AssetCard({ asset, onTitleClick }: AssetCardProps) {
   const handleImageError = () => {
     console.error("Error loading image:", asset.url);
     setImageError(true);
+  };
+
+  const fetchOwnersBalances = async (
+    assetId: number
+  ): Promise<{ address: string; balance: number }[]> => {
+    if (!assetId || assetId <= 0) {
+      return [];
+    }
+    try {
+      const owners = await fetchAssetOwners(assetId);
+      if (!owners || owners.length === 0) {
+        return [];
+      }
+
+      const assetIds = new Array(owners.length).fill(assetId);
+
+      const balances = await fetchBalancesOfAccounts(
+        owners.map((owner) => owner.toString()),
+        assetIds
+      );
+
+      return owners.map((address, index) => ({
+        address: address.toString(),
+        balance: Number(balances[index] || 0),
+      }));
+    } catch (error) {
+      console.error("Error fetching balances:", error);
+      throw new Error("Failed to fetch owner balances");
+    }
   };
 
   return (
@@ -40,7 +74,7 @@ export default function AssetCard({ asset, onTitleClick }: AssetCardProps) {
         <CardContent className="p-4">
           <div
             className="relative w-full aspect-[4/3] cursor-pointer group"
-            onClick={() => !imageError && setIsModalOpen(true)}
+            onClick={() => !imageError && setIsImageModalOpen(true)}
           >
             {asset.url &&
             asset.url !== "" &&
@@ -68,9 +102,18 @@ export default function AssetCard({ asset, onTitleClick }: AssetCardProps) {
               <ImageFallback />
             )}
           </div>
-          <div className="mt-4 text-sm text-gray-600">
-            <p>ID: {asset.koltenaId}</p>
-            <p>#{asset.koltenaTokens}</p>
+          <div className="mt-4 flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              <p>ID: {asset.koltenaId}</p>
+              <p>#{asset.koltenaTokens}</p>
+            </div>
+            <Button
+              onClick={() => setIsAssetOwnersModalOpen(true)}
+              variant="secondary"
+              className="text-sm bg-gray-100 hover:bg-gray-200"
+            >
+              Owners
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -78,8 +121,16 @@ export default function AssetCard({ asset, onTitleClick }: AssetCardProps) {
       <ImageModal
         src={asset.url}
         alt={asset.title}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+      />
+
+      <AssetOwnersModal
+        isOpen={isAssetOwnersModalOpen}
+        onClose={() => setIsAssetOwnersModalOpen(false)}
+        assetId={asset.koltenaId}
+        tokenId={asset.koltenaTokens}
+        fetchOwnersBalances={fetchOwnersBalances}
       />
     </>
   );

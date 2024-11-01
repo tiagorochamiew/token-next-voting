@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.2",
+    "@radix-ui/react-visually-hidden": "^1.1.0",
     "ethers": "^6.13.4",
     "next": "15.0.1",
     "react": "19.0.0-rc-69d4b800-20241021",

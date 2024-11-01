@@ -29,6 +29,7 @@ interface SmartContractContextType {
   error: string | null;
   clearError: () => void;
   mintAsset: (numTokens: number) => Promise<MintResult>;
+  fetchAssetOwners: (assetId: number) => Promise<string[]>;
   fetchAccountAssets: (address: string) => Promise<number[]>;
   fetchAccountBalance: (address: string, asset: number) => Promise<number>;
   fetchBalancesOfAccounts: (
@@ -61,6 +62,19 @@ export function SmartContractProvider({
     const signer = await provider.getSigner();
     return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
   }, []);
+
+  const fetchAssetOwners = async (assetId: number): Promise<string[]> => {
+    try {
+      const contract = await getContract();
+
+      const response = await contract.assetOwners(assetId);
+
+      return response;
+    } catch (error) {
+      console.error("Error fetching account balances:", error);
+      throw error;
+    }
+  };
 
   const fetchAccountBalance = async (
     address: string,
@@ -149,6 +163,7 @@ export function SmartContractProvider({
         error,
         clearError,
         mintAsset,
+        fetchAssetOwners,
         fetchAccountBalance,
         fetchAccountAssets,
         fetchBalancesOfAccounts,
