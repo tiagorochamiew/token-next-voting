@@ -6,7 +6,7 @@ import { useSmartContract } from "@/contexts/SmartContractContext";
 import { Pages } from "@/enums/Pages";
 import { HomeTab } from "@/components/tabs/Home";
 import { AccountTab } from "@/components/tabs/Account";
-import AssetModal from "@/components/modals/FormModal";
+import AssetDetailsModal from "@/components/modals/FormModal";
 import { Asset } from "@/interfaces/Asset";
 import { patcher } from "@/api/patcher";
 import { POSTResponse } from "@/interfaces/Response";
@@ -25,7 +25,7 @@ export default function AssetGrid({
   const { account } = useWeb3();
   const { assets, isLoading, error, fetchAssets, hasMore, currentPage } =
     useAssets();
-  const { fetchAccountBalances, fetchAccountAssets, mintAsset } =
+  const { fetchBalancesOfAccounts, fetchAccountAssets, mintAsset } =
     useSmartContract();
   const [accountAssets, setAccountAssets] = useState<Asset[]>([]);
 
@@ -38,8 +38,8 @@ export default function AssetGrid({
         setAccountAssets([]);
         return [];
       }
-
-      const balances = await fetchAccountBalances(account, assetIds);
+      const addresses: string[] = Array(assetIds.length).fill(account);
+      const balances = await fetchBalancesOfAccounts(addresses, assetIds);
       const accountBalances = assetIds.map((id, index) => ({
         Id: id,
         Balance: balances[index],
@@ -62,7 +62,7 @@ export default function AssetGrid({
       console.error("Error loading account assets:", err);
       throw err;
     }
-  }, [account, fetchAccountAssets, fetchAccountBalances]);
+  }, [account, fetchAccountAssets, fetchBalancesOfAccounts]);
   useEffect(() => {
     const loadAssets = async () => {
       if (activeTab === Pages.HOME) {
@@ -168,7 +168,7 @@ export default function AssetGrid({
   return (
     <div>
       {content}
-      <AssetModal
+      <AssetDetailsModal
         isOpen={isModalOpen}
         onClose={handleModalClose}
         onMint={handleMint}

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Asset } from "@/interfaces/Asset";
 import { Button } from "@/components/ui/Button";
 import AssetCard from "@/components/AssetCard";
-import AssetModal from "@/components/modals/AssetModal";
+import AssetDetailsModal from "@/components/modals/AssetDetailsModal";
 
 interface HomeTabProps {
   assets: Asset[];
@@ -84,7 +84,7 @@ export function HomeTab({
         </div>
       )}
 
-      <AssetModal
+      <AssetDetailsModal
         isOpen={selectedAssetId !== null}
         onClose={() => setSelectedAssetId(null)}
         asset={assets.find((a) => a.koltenaId === selectedAssetId) || null}

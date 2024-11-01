@@ -13,6 +13,7 @@ import { validateAssetForm } from "@/utils/Validators";
 import { formatFieldName } from "@/utils/Formatter";
 import { ASSET_TYPES } from "@/utils/Constants";
 import { toast } from "react-toastify";
+import { PUTResponse } from "@/interfaces/Response";
 
 interface FormModalProps {
   isOpen: boolean;
@@ -131,17 +132,21 @@ export default function FormModal({ isOpen, onClose, onMint }: FormModalProps) {
         console.error("Error minting asset: koltenaId not found");
         return;
       }
-      const putResponse = await patcher(`${url}/${asset.id}`, "PUT", asset);
-      if (
-        !putResponse ||
-        !putResponse?.success ||
-        !putResponse?.data ||
-        putResponse?.data?.id !== asset.id
-      ) {
+      const putResponse: PUTResponse = await patcher(
+        `${url}/${asset.id}`,
+        "PUT",
+        asset
+      );
+      if (!putResponse || !putResponse?.success) {
         console.error("Error updating asset:", putResponse);
         return;
       }
-      console.log("Updated asset:", putResponse?.data?.id);
+      const updatedAsset = putResponse?.data as Asset;
+      if (!updatedAsset || updatedAsset?.id !== asset.id) {
+        console.error("Error updating asset: updated asset not found");
+        return;
+      }
+      console.log("Updated asset:", updatedAsset);
       toast.success("F-NFT created successfully!");
       onClose();
     } catch (error) {

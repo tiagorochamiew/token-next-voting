@@ -1,4 +1,4 @@
-// components/AssetModal.tsx
+// components/AssetDetailsModal.tsx
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useWeb3 } from "@/contexts/Web3Context";
@@ -9,17 +9,17 @@ import { Asset } from "@/interfaces/Asset";
 import { DetailItem } from "@/components/details/Item";
 import { ArrayDetail } from "@/components/details/Array";
 
-interface AssetModalProps {
+interface AssetDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   asset: Asset | null;
 }
 
-export default function AssetModal({
+export default function AssetDetailsModal({
   isOpen,
   onClose,
   asset,
-}: AssetModalProps) {
+}: AssetDetailsModalProps) {
   const { account } = useWeb3();
   const { fetchAccountBalance } = useSmartContract();
   const [balance, setBalance] = useState<number>(0);

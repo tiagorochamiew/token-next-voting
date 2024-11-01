@@ -31,8 +31,8 @@ interface SmartContractContextType {
   mintAsset: (numTokens: number) => Promise<MintResult>;
   fetchAccountAssets: (address: string) => Promise<number[]>;
   fetchAccountBalance: (address: string, asset: number) => Promise<number>;
-  fetchAccountBalances: (
-    address: string,
+  fetchBalancesOfAccounts: (
+    addresses: string[],
     assets: number[]
   ) => Promise<number[]>;
 }
@@ -78,14 +78,12 @@ export function SmartContractProvider({
     }
   };
 
-  const fetchAccountBalances = async (
-    address: string,
+  const fetchBalancesOfAccounts = async (
+    addresses: string[],
     assets: number[]
   ): Promise<number[]> => {
     try {
       const contract = await getContract();
-
-      const addresses = Array(assets.length).fill(address);
 
       const response = await contract.balanceOfBatch(addresses, assets);
 
@@ -153,7 +151,7 @@ export function SmartContractProvider({
         mintAsset,
         fetchAccountBalance,
         fetchAccountAssets,
-        fetchAccountBalances,
+        fetchBalancesOfAccounts,
       }}
     >
       {children}
