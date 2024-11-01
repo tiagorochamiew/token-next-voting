@@ -9,6 +9,7 @@ import { AccountTab } from "@/components/tabs/Account";
 import AssetModal from "@/components/modals/FormModal";
 import { Asset } from "@/interfaces/Asset";
 import { patcher } from "@/api/patcher";
+import { POSTResponse } from "@/interfaces/Response";
 
 interface AssetGridProps {
   activeTab: string;
@@ -44,7 +45,7 @@ export default function AssetGrid({
         Balance: balances[index],
       }));
       console.log("Fetching...");
-      const response = await patcher("assets", "POST", {
+      const response: POSTResponse = await patcher("assets", "POST", {
         Balances: accountBalances,
       });
 
@@ -52,7 +53,8 @@ export default function AssetGrid({
         console.log("Failed to fetch asset details");
         return [];
       }
-
+      const data = response.data as Asset[];
+      console.log("Fetched assets from contract:", data?.length || 0);
       return response?.data && Array.isArray(response.data)
         ? response.data
         : [];
