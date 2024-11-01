@@ -59,7 +59,8 @@ export function AssetsProvider({ children }: AssetsProviderProps) {
 
   useEffect(() => {
     if (response?.data) {
-      setHasMore(response.data.length === ITEMS_PER_PAGE);
+      const data = response.data as Asset[];
+      setHasMore(data.length === ITEMS_PER_PAGE);
     }
   }, [response]);
 
@@ -73,7 +74,10 @@ export function AssetsProvider({ children }: AssetsProviderProps) {
       </div>
     );
   }
-  const assets = response?.data ?? [];
+  // if (!response?.data) {
+  //   return [];
+  // }
+  const assets = Array.isArray(response?.data) ? response.data : [];
 
   return (
     <AssetsContext.Provider
