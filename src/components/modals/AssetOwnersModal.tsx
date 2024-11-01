@@ -13,7 +13,6 @@ interface AssetOwnersModalProps {
   isOpen: boolean;
   onClose: () => void;
   assetId: number;
-  assetId: number;
   fetchOwnersBalances: (assetId: number) => Promise<OwnerBalance[]>;
 }
 
@@ -21,7 +20,6 @@ export function AssetOwnersModal({
   isOpen,
   onClose,
   assetId,
-  tokens,
   fetchOwnersBalances,
 }: AssetOwnersModalProps) {
   const { account } = useWeb3();

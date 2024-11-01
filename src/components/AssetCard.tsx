@@ -129,7 +129,6 @@ export default function AssetCard({ asset, onTitleClick }: AssetCardProps) {
         isOpen={isAssetOwnersModalOpen}
         onClose={() => setIsAssetOwnersModalOpen(false)}
         assetId={asset.koltenaId}
-        tokenId={asset.koltenaTokens}
         fetchOwnersBalances={fetchOwnersBalances}
       />
     </>
