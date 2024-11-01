@@ -8,7 +8,7 @@ import { HomeTab } from "@/components/tabs/Home";
 import { AccountTab } from "@/components/tabs/Account";
 import AssetModal from "@/components/modals/FormModal";
 import { Asset } from "@/interfaces/Asset";
-import apiConfig from "@/lib/config";
+import { patcher } from "@/api/patcher";
 
 interface AssetGridProps {
   activeTab: string;
@@ -34,38 +34,28 @@ export default function AssetGrid({
     try {
       const assetIds = await fetchAccountAssets(account);
       if (assetIds.length <= 0) {
+        setAccountAssets([]);
         return [];
       }
 
       const balances = await fetchAccountBalances(account, assetIds);
       const accountBalances = assetIds.map((id, index) => ({
-        id,
-        balance: balances[index],
+        Id: id,
+        Balance: balances[index],
       }));
       console.log("Fetching...");
-      const response = await fetch(`${apiConfig.apiUrl}/assets`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          balances: accountBalances.map((item) => ({
-            id: item.id,
-            balance: item.balance,
-          })),
-        }),
+      const response = await patcher("assets", "POST", {
+        Balances: accountBalances,
       });
-      if (!response.ok) {
-        throw new Error("Failed to fetch asset details from backend");
-      }
-      console.log("Fetched koltena assets");
 
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || "Failed to fetch asset details");
+      if (!response.success) {
+        console.log("Failed to fetch asset details");
+        return [];
       }
 
-      return data.data;
+      return response?.data && Array.isArray(response.data)
+        ? response.data
+        : [];
     } catch (err) {
       console.error("Error loading account assets:", err);
       throw err;
@@ -78,7 +68,7 @@ export default function AssetGrid({
       }
       if (activeTab === Pages.ACCOUNT) {
         const data = await loadAccountAssets();
-        setAccountAssets(data);
+        setAccountAssets(data || []);
       }
     };
 

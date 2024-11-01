@@ -1,7 +1,6 @@
 import { POSTResponse } from "@/interfaces/Response";
 import { PUTResponse } from "@/interfaces/Response";
 import apiConfig from "@/lib/config";
-
 export async function patcher<T>(
   url: string,
   method: string,
