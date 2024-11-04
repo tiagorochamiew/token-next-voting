@@ -30,14 +30,14 @@ interface SmartContractContextType {
   clearError: () => void;
   mintAsset: (numTokens: number) => Promise<MintResult>;
   proposePurchaseOfTokens: (
-    buyerAddress: string,
     sellerAddress: string,
+    assetId: number,
     tokens: number,
     funds: number
   ) => Promise<{ txHash: string }>;
   approveSaleOfTokens: (
-    sellerAddress: string,
     buyerAddress: string,
+    assetId: number,
     tokens: number,
     funds: number
   ) => Promise<{ txHash: string }>;
@@ -166,13 +166,13 @@ export function SmartContractProvider({
 
   const proposePurchaseOfTokens = useCallback(
     async (
-      buyerAddress: string,
       sellerAddress: string,
+      assetId: number,
       tokens: number,
       funds: number
     ) => {
       console.log(
-        `${buyerAddress} proposing ${sellerAddress} to purchase ${tokens} tokens for ${funds} ETH`
+        `${account} proposing ${sellerAddress} to purchase ${tokens} tokens (#${assetId}) for ${funds} ETH`
       );
       try {
         setIsLoading(true);
@@ -183,8 +183,8 @@ export function SmartContractProvider({
 
         const contract = await getContract();
         const tx = await contract.proposePurchase(
-          buyerAddress,
           sellerAddress,
+          BigInt(assetId),
           BigInt(tokens),
           BigInt(funds)
         );
@@ -209,13 +209,13 @@ export function SmartContractProvider({
 
   const approveSaleOfTokens = useCallback(
     async (
-      sellerAddress: string,
       buyerAddress: string,
+      assetId: number,
       tokens: number,
       funds: number
     ) => {
       console.log(
-        `${sellerAddress} approving the sale of ${tokens} tokens to ${buyerAddress} for ${funds} ETH`
+        `${account} approving the sale of ${tokens} tokens (#${assetId}) to ${buyerAddress} for ${funds} ETH`
       );
       try {
         setIsLoading(true);
@@ -227,7 +227,7 @@ export function SmartContractProvider({
         const contract = await getContract();
         const tx = await contract.approveSale(
           buyerAddress,
-          sellerAddress,
+          BigInt(assetId),
           BigInt(tokens),
           BigInt(funds)
         );

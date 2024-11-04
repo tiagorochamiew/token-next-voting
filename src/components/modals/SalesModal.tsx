@@ -77,15 +77,15 @@ export function SalesModal({
     try {
       if (mode === "buy") {
         await proposePurchaseOfTokens(
-          account,
           sellerAddress,
+          assetId,
           parseInt(numTokens),
           parseFloat(funds)
         );
       } else {
         await approveSaleOfTokens(
-          account,
           buyerAddress,
+          assetId,
           parseInt(numTokens),
           parseFloat(funds)
         );
