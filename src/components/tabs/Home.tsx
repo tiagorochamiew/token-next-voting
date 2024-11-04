@@ -35,6 +35,7 @@ export function HomeTab({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {assets.map((asset) => (
           <AssetCard
+            tab="home"
             key={asset.id}
             asset={asset}
             onTitleClick={handleTitleClick}

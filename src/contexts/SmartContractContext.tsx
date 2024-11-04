@@ -9,7 +9,7 @@ import {
 import { ethers } from "ethers";
 import { useWeb3 } from "@/contexts/Web3Context";
 import contract from "../../artifacts/contracts/koltena.sol/fnft.json";
-import { ParseMintLogs } from "@/utils/Parser";
+import { ParseActiveEventLogs, ParseMintLogs } from "@/utils/Parser";
 import { MintResult } from "@/interfaces/MintResult";
 import apiConfig from "@/lib/config";
 
@@ -29,6 +29,18 @@ interface SmartContractContextType {
   error: string | null;
   clearError: () => void;
   mintAsset: (numTokens: number) => Promise<MintResult>;
+  proposePurchaseOfTokens: (
+    buyerAddress: string,
+    sellerAddress: string,
+    tokens: number,
+    funds: number
+  ) => Promise<{ txHash: string }>;
+  approveSaleOfTokens: (
+    sellerAddress: string,
+    buyerAddress: string,
+    tokens: number,
+    funds: number
+  ) => Promise<{ txHash: string }>;
   fetchAssetOwners: (assetId: number) => Promise<string[]>;
   fetchAccountAssets: (address: string) => Promise<number[]>;
   fetchAccountBalance: (address: string, asset: number) => Promise<number>;
@@ -152,6 +164,92 @@ export function SmartContractProvider({
     [account, getContract]
   );
 
+  const proposePurchaseOfTokens = useCallback(
+    async (
+      buyerAddress: string,
+      sellerAddress: string,
+      tokens: number,
+      funds: number
+    ) => {
+      console.log(
+        `${buyerAddress} proposing ${sellerAddress} to purchase ${tokens} tokens for ${funds} ETH`
+      );
+      try {
+        setIsLoading(true);
+        setError(null);
+        if (!account) {
+          throw new Error("Please connect your wallet");
+        }
+
+        const contract = await getContract();
+        const tx = await contract.proposePurchase(
+          buyerAddress,
+          sellerAddress,
+          BigInt(tokens),
+          BigInt(funds)
+        );
+        const receipt = await tx.wait();
+
+        const logs = ParseActiveEventLogs(receipt.logs[0].data);
+        console.log("ParseActiveEventLogs ", logs);
+        return {
+          txHash: tx.hash,
+        };
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "proposePurchaseOfTokens failed";
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [account, getContract]
+  );
+
+  const approveSaleOfTokens = useCallback(
+    async (
+      sellerAddress: string,
+      buyerAddress: string,
+      tokens: number,
+      funds: number
+    ) => {
+      console.log(
+        `${sellerAddress} approving the sale of ${tokens} tokens to ${buyerAddress} for ${funds} ETH`
+      );
+      try {
+        setIsLoading(true);
+        setError(null);
+        if (!account) {
+          throw new Error("Please connect your wallet");
+        }
+
+        const contract = await getContract();
+        const tx = await contract.approveSale(
+          buyerAddress,
+          sellerAddress,
+          BigInt(tokens),
+          BigInt(funds)
+        );
+        const receipt = await tx.wait();
+
+        const logs = ParseActiveEventLogs(receipt.logs[0].data);
+        console.log("ParseActiveEventLogs ", logs);
+        return {
+          txHash: tx.hash,
+        };
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "approveSaleOfTokens failed";
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [account, getContract]
+  );
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -163,6 +261,8 @@ export function SmartContractProvider({
         error,
         clearError,
         mintAsset,
+        approveSaleOfTokens,
+        proposePurchaseOfTokens,
         fetchAssetOwners,
         fetchAccountBalance,
         fetchAccountAssets,

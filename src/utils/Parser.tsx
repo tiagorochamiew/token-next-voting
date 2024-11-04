@@ -8,3 +8,9 @@ export function ParseMintLogs(data: string) {
   const tokens = decoded[1].toString();
   return { id, tokens };
 }
+
+export function ParseActiveEventLogs(data: string) {
+  const decoded = abiCoder.decode(["uint32", "uint256"], data);
+  const id = decoded[0].toString();
+  return id;
+}

@@ -1,5 +1,5 @@
 // components/AssetCard.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import Image from "next/image";
@@ -7,17 +7,27 @@ import { ImageModal } from "@/components/modals/ImageModal";
 import { AssetOwnersModal } from "@/components/modals/AssetOwnersModal";
 import { Asset } from "@/interfaces/Asset";
 import { useSmartContract } from "@/contexts/SmartContractContext";
+import { useWeb3 } from "@/contexts/Web3Context";
 
 interface AssetCardProps {
+  tab: string;
   asset: Asset;
   onTitleClick?: (koltenaId: number) => void;
 }
 
-export default function AssetCard({ asset, onTitleClick }: AssetCardProps) {
+export default function AssetCard({
+  tab,
+  asset,
+  onTitleClick,
+}: AssetCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isAssetOwnersModalOpen, setIsAssetOwnersModalOpen] = useState(false);
+  const [currentBalance, setCurrentBalance] = useState<number>(
+    asset.balance || 0
+  );
   const { fetchAssetOwners, fetchBalancesOfAccounts } = useSmartContract();
+  const { account } = useWeb3();
 
   const ImageFallback = () => (
     <div className="absolute inset-0 bg-gray-200 flex items-center justify-center rounded">
@@ -29,6 +39,24 @@ export default function AssetCard({ asset, onTitleClick }: AssetCardProps) {
     console.error("Error loading image:", asset.url);
     setImageError(true);
   };
+
+  useEffect(() => {
+    const loadCurrentBalance = async () => {
+      if (tab === "account" && account) {
+        try {
+          const balances = await fetchBalancesOfAccounts(
+            [account],
+            [asset.koltenaId]
+          );
+          setCurrentBalance(Number(balances[0] || 0));
+        } catch (error) {
+          console.error("Error fetching balance:", error);
+        }
+      }
+    };
+
+    loadCurrentBalance();
+  }, [tab, asset.koltenaId, account, fetchBalancesOfAccounts]);
 
   const fetchOwnersBalances = async (
     assetId: number
@@ -43,11 +71,17 @@ export default function AssetCard({ asset, onTitleClick }: AssetCardProps) {
       }
 
       const assetIds = new Array(owners.length).fill(assetId);
-
       const balances = await fetchBalancesOfAccounts(
         owners.map((owner) => owner.toString()),
         assetIds
       );
+
+      const currentAccountIndex = owners.findIndex(
+        (owner) => owner.toLowerCase() === account.toLowerCase()
+      );
+      if (currentAccountIndex !== -1) {
+        setCurrentBalance(Number(balances[currentAccountIndex] || 0));
+      }
 
       return owners.map((address, index) => ({
         address: address.toString(),
@@ -105,7 +139,7 @@ export default function AssetCard({ asset, onTitleClick }: AssetCardProps) {
           <div className="mt-4 flex items-center justify-between">
             <div className="text-sm text-gray-600">
               <p>ID: {asset.koltenaId}</p>
-              <p>#{asset.koltenaTokens}</p>
+              <p>#{tab == "home" ? asset.koltenaTokens : currentBalance}</p>
             </div>
             <Button
               onClick={() => setIsAssetOwnersModalOpen(true)}
@@ -129,7 +163,10 @@ export default function AssetCard({ asset, onTitleClick }: AssetCardProps) {
         isOpen={isAssetOwnersModalOpen}
         onClose={() => setIsAssetOwnersModalOpen(false)}
         assetId={asset.koltenaId}
+        assetTokens={asset.koltenaTokens}
         fetchOwnersBalances={fetchOwnersBalances}
+        accountBalance={currentBalance}
+        onBalanceUpdate={(newBalance) => setCurrentBalance(newBalance)}
       />
     </>
   );

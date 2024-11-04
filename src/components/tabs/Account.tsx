@@ -47,6 +47,7 @@ export function AccountTab({ assets, isLoading, error }: AccountTabProps) {
         {assets.map((asset: Asset) => (
           <div key={asset.id}>
             <AssetCard
+              tab="account"
               asset={{
                 type: asset.type || "",
                 id: asset.id.toString(),
