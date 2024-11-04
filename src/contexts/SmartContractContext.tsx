@@ -6,7 +6,7 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { ethers } from "ethers";
+import { ethers, EventLog, Log } from "ethers";
 import { useWeb3 } from "@/contexts/Web3Context";
 import contract from "../../artifacts/contracts/koltena.sol/fnft.json";
 import { ParseActiveEventLogs, ParseMintLogs } from "@/utils/Parser";
@@ -41,6 +41,15 @@ interface SmartContractContextType {
     tokens: number,
     funds: number
   ) => Promise<{ txHash: string }>;
+  confirmSaleOfTokens: (
+    buyerAddress: string,
+    assetId: number
+  ) => Promise<{ txHash: string }>;
+  finishTransactionOfTokens: (
+    sellerAddress: string,
+    assetId: number,
+    funds: number
+  ) => Promise<{ txHash: string }>;
   fetchAssetOwners: (assetId: number) => Promise<string[]>;
   fetchAccountAssets: (address: string) => Promise<number[]>;
   fetchAccountBalance: (address: string, asset: number) => Promise<number>;
@@ -48,6 +57,7 @@ interface SmartContractContextType {
     addresses: string[],
     assets: number[]
   ) => Promise<number[]>;
+  fetchSaleRequests: () => Promise<(Log | EventLog)[]>;
 }
 
 const SmartContractContext = createContext<
@@ -74,6 +84,34 @@ export function SmartContractProvider({
     const signer = await provider.getSigner();
     return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
   }, []);
+
+  const fetchSaleRequests = async () => {
+    try {
+      if (!window.ethereum) {
+        throw new Error("Please install MetaMask");
+      }
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+
+      const eventSignature =
+        "SaleRequest(address,address,uint256,uint256,uint256,bool,bool,bool,bool,bool)";
+      const eventTopic = ethers.id(eventSignature);
+
+      const filter: ethers.Filter = {
+        address: CONTRACT_ADDRESS,
+        topics: [eventTopic],
+        fromBlock: BigInt(0),
+        toBlock: "latest",
+      };
+
+      const logs = await provider.getLogs(filter);
+      console.log("Raw logs:", logs);
+      return logs;
+    } catch (err) {
+      console.error("Error loading transactions:", err);
+      throw err;
+    }
+  };
 
   const fetchAssetOwners = async (assetId: number): Promise<string[]> => {
     try {
@@ -250,6 +288,80 @@ export function SmartContractProvider({
     [account, getContract]
   );
 
+  const confirmSaleOfTokens = useCallback(
+    async (buyerAddress: string, assetId: number) => {
+      console.log(
+        `${account} confirming the sale of tokens (#${assetId}) to ${buyerAddress}`
+      );
+      try {
+        setIsLoading(true);
+        setError(null);
+        if (!account) {
+          throw new Error("Please connect your wallet");
+        }
+
+        const contract = await getContract();
+        const tx = await contract.confirmSale(buyerAddress, BigInt(assetId));
+        const receipt = await tx.wait();
+
+        const logs = ParseActiveEventLogs(receipt.logs[0].data);
+        console.log("ParseActiveEventLogs ", logs);
+        return {
+          txHash: tx.hash,
+        };
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "confirmSaleOfTokens failed";
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [account, getContract]
+  );
+
+  const finishTransactionOfTokens = useCallback(
+    async (sellerAddress: string, assetId: number, funds: number) => {
+      console.log(
+        `${account} finishing the transaction of tokens (#${assetId}) by the ${sellerAddress} for ${funds} ETH`
+      );
+      try {
+        setIsLoading(true);
+        setError(null);
+        if (!account) {
+          throw new Error("Please connect your wallet");
+        }
+
+        const contract = await getContract();
+        const tx = await contract.finishTransaction(
+          sellerAddress,
+          BigInt(assetId),
+          {
+            value: BigInt(funds),
+          }
+        );
+        const receipt = await tx.wait();
+
+        const logs = ParseActiveEventLogs(receipt.logs[0].data);
+        console.log("ParseActiveEventLogs ", logs);
+        return {
+          txHash: tx.hash,
+        };
+      } catch (err) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : "finishTransactionOfTokens failed";
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [account, getContract]
+  );
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -263,10 +375,13 @@ export function SmartContractProvider({
         mintAsset,
         approveSaleOfTokens,
         proposePurchaseOfTokens,
+        confirmSaleOfTokens,
+        finishTransactionOfTokens,
         fetchAssetOwners,
         fetchAccountBalance,
         fetchAccountAssets,
         fetchBalancesOfAccounts,
+        fetchSaleRequests,
       }}
     >
       {children}

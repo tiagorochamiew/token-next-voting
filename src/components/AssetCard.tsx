@@ -8,6 +8,7 @@ import { AssetOwnersModal } from "@/components/modals/AssetOwnersModal";
 import { Asset } from "@/interfaces/Asset";
 import { useSmartContract } from "@/contexts/SmartContractContext";
 import { useWeb3 } from "@/contexts/Web3Context";
+import { AssetTransactionsModal } from "./modals/AssetTransactionsModal";
 
 interface AssetCardProps {
   tab: string;
@@ -23,6 +24,7 @@ export default function AssetCard({
   const [imageError, setImageError] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isAssetOwnersModalOpen, setIsAssetOwnersModalOpen] = useState(false);
+  const [isTransactionsModalOpen, setIsTransactionsModalOpen] = useState(false);
   const [currentBalance, setCurrentBalance] = useState<number>(
     asset.balance || 0
   );
@@ -141,13 +143,22 @@ export default function AssetCard({
               <p>ID: {asset.koltenaId}</p>
               <p>#{tab == "home" ? asset.koltenaTokens : currentBalance}</p>
             </div>
-            <Button
-              onClick={() => setIsAssetOwnersModalOpen(true)}
-              variant="secondary"
-              className="text-sm bg-gray-100 hover:bg-gray-200"
-            >
-              Owners
-            </Button>
+            <div className="space-x-2">
+              <Button
+                onClick={() => setIsTransactionsModalOpen(true)}
+                variant="secondary"
+                className="text-sm bg-gray-100 hover:bg-gray-200"
+              >
+                Transactions
+              </Button>
+              <Button
+                onClick={() => setIsAssetOwnersModalOpen(true)}
+                variant="secondary"
+                className="text-sm bg-gray-100 hover:bg-gray-200"
+              >
+                Owners
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -167,6 +178,12 @@ export default function AssetCard({
         fetchOwnersBalances={fetchOwnersBalances}
         accountBalance={currentBalance}
         onBalanceUpdate={(newBalance) => setCurrentBalance(newBalance)}
+      />
+
+      <AssetTransactionsModal
+        isOpen={isTransactionsModalOpen}
+        onClose={() => setIsTransactionsModalOpen(false)}
+        assetId={asset.koltenaId}
       />
     </>
   );

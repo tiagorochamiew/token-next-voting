@@ -1,4 +1,5 @@
-import { AbiCoder } from "ethers";
+import { SaleRequest } from "@/interfaces/Events";
+import { AbiCoder, ethers, Log } from "ethers";
 
 const abiCoder = new AbiCoder();
 
@@ -13,4 +14,72 @@ export function ParseActiveEventLogs(data: string) {
   const decoded = abiCoder.decode(["uint32", "uint256"], data);
   const id = decoded[0].toString();
   return id;
+}
+
+export async function parseTransactionLogs(
+  logs: Log[]
+): Promise<SaleRequest[]> {
+  const parsedLogs: SaleRequest[] = [];
+  const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+
+  for (const log of logs) {
+    try {
+      // Get seller and buyer from topics (they are indexed parameters)
+      const seller = ethers.getAddress(
+        ethers
+          .hexlify(log.topics[1])
+          .replace("0x000000000000000000000000", "0x")
+      );
+      const buyer = ethers.getAddress(
+        ethers
+          .hexlify(log.topics[2])
+          .replace("0x000000000000000000000000", "0x")
+      );
+
+      // Decode the remaining parameters from data
+      const decodedData = abiCoder.decode(
+        [
+          "uint256", // assetId
+          "uint256", // tokens
+          "uint256", // funds
+          "bool", // bySeller
+          "bool", // byBuyer
+          "bool", // isConfirmed
+          "bool", // isFinished
+          "bool", // isWithdraw
+        ],
+        log.data
+      );
+
+      console.log("Decoded transaction:", {
+        seller,
+        buyer,
+        assetId: decodedData[0],
+        tokens: decodedData[1],
+        funds: decodedData[2],
+        bySeller: decodedData[3],
+        byBuyer: decodedData[4],
+        isConfirmed: decodedData[5],
+        isFinished: decodedData[6],
+        isWithdraw: decodedData[7],
+      });
+
+      parsedLogs.push({
+        seller,
+        buyer,
+        assetId: Number(decodedData[0]),
+        tokens: Number(decodedData[1]),
+        funds: Number(decodedData[2]),
+        bySeller: decodedData[3],
+        byBuyer: decodedData[4],
+        isConfirmed: decodedData[5],
+        isFinished: decodedData[6],
+        isWithdraw: decodedData[7],
+      });
+    } catch (error) {
+      console.error("Error parsing log:", error, "for log:", log);
+    }
+  }
+
+  return parsedLogs;
 }
