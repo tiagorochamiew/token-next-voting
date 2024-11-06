@@ -1,11 +1,11 @@
 export interface SaleRequest {
-  seller: string;
+  koltenaId: number;
   buyer: string;
-  assetId: number;
+  seller: string;
   tokens: number;
   funds: number;
-  bySeller: boolean;
-  byBuyer: boolean;
+  sellerApproved: boolean;
+  buyerProposed: boolean;
   isConfirmed: boolean;
   isFinished: boolean;
   isWithdraw: boolean;

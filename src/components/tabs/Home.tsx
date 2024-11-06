@@ -42,11 +42,9 @@ export function HomeTab({
           />
         ))}
       </div>
-
       {isLoading && (
         <div className="text-center py-4">Loading more assets...</div>
       )}
-
       <div className="flex justify-center gap-4 py-4">
         {!isLoading && currentPage !== 1 && (
           <Button
@@ -78,7 +76,6 @@ export function HomeTab({
           </Button>
         )}
       </div>
-
       {!isLoading && assets.length === 0 && (
         <div className="text-center py-8 text-gray-600">
           No assets available

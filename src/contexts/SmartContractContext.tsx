@@ -105,7 +105,7 @@ export function SmartContractProvider({
       };
 
       const logs = await provider.getLogs(filter);
-      console.log("Raw logs:", logs);
+      console.log("Raw logs:", logs.length);
       return logs;
     } catch (err) {
       console.error("Error loading transactions:", err);

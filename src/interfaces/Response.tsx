@@ -1,9 +1,10 @@
 // src/interfaces/Response.tsx
 import { Asset } from "@/interfaces/Asset";
+import { Transaction } from "@/interfaces/Transaction";
 
 export interface GETResponse {
   success: boolean;
-  data: Asset | Asset[];
+  data: Asset | Asset[] | Transaction | Transaction[];
 }
 export interface PUTResponse {
   success: boolean;
@@ -11,5 +12,5 @@ export interface PUTResponse {
 }
 export interface POSTResponse {
   success: boolean;
-  data: Asset | Asset[];
+  data: Asset | Asset[] | Transaction | Transaction[];
 }

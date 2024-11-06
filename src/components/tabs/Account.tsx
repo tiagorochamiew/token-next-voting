@@ -46,27 +46,7 @@ export function AccountTab({ assets, isLoading, error }: AccountTabProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {assets.map((asset: Asset) => (
           <div key={asset.id}>
-            <AssetCard
-              tab="account"
-              asset={{
-                type: asset.type || "",
-                id: asset.id.toString(),
-                koltenaId: asset.koltenaId || 0,
-                koltenaTokens: asset.koltenaTokens || 0,
-                balance: asset.balance || 0,
-                title: asset.title || "",
-                url: asset.url || "",
-                price: asset.price || 0,
-                condition: asset.condition || "",
-                age: asset.age || "",
-                size: asset.size || "",
-                liquidity: asset.liquidity || "",
-                historicalPerformance: asset.historicalPerformance || [],
-                marketTrends: asset.marketTrends || [],
-                externalEconomicFactors: asset.externalEconomicFactors || [],
-                volatility: asset.volatility || [],
-              }}
-            />
+            <AssetCard tab="account" asset={asset} />
           </div>
         ))}
       </div>

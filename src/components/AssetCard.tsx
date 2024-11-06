@@ -144,20 +144,24 @@ export default function AssetCard({
               <p>#{tab == "home" ? asset.koltenaTokens : currentBalance}</p>
             </div>
             <div className="space-x-2">
-              <Button
-                onClick={() => setIsTransactionsModalOpen(true)}
-                variant="secondary"
-                className="text-sm bg-gray-100 hover:bg-gray-200"
-              >
-                Transactions
-              </Button>
-              <Button
-                onClick={() => setIsAssetOwnersModalOpen(true)}
-                variant="secondary"
-                className="text-sm bg-gray-100 hover:bg-gray-200"
-              >
-                Owners
-              </Button>
+              {asset.koltenaId > 0 && (
+                <Button
+                  onClick={() => setIsTransactionsModalOpen(true)}
+                  variant="secondary"
+                  className="text-sm bg-gray-100 hover:bg-gray-200"
+                >
+                  Transactions
+                </Button>
+              )}
+              {asset.koltenaId > 0 && (
+                <Button
+                  onClick={() => setIsAssetOwnersModalOpen(true)}
+                  variant="secondary"
+                  className="text-sm bg-gray-100 hover:bg-gray-200"
+                >
+                  Owners
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>

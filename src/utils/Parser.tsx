@@ -24,7 +24,6 @@ export async function parseTransactionLogs(
 
   for (const log of logs) {
     try {
-      // Get seller and buyer from topics (they are indexed parameters)
       const seller = ethers.getAddress(
         ethers
           .hexlify(log.topics[1])
@@ -36,7 +35,6 @@ export async function parseTransactionLogs(
           .replace("0x000000000000000000000000", "0x")
       );
 
-      // Decode the remaining parameters from data
       const decodedData = abiCoder.decode(
         [
           "uint256", // assetId
@@ -51,27 +49,27 @@ export async function parseTransactionLogs(
         log.data
       );
 
-      console.log("Decoded transaction:", {
-        seller,
-        buyer,
-        assetId: decodedData[0],
-        tokens: decodedData[1],
-        funds: decodedData[2],
-        bySeller: decodedData[3],
-        byBuyer: decodedData[4],
-        isConfirmed: decodedData[5],
-        isFinished: decodedData[6],
-        isWithdraw: decodedData[7],
-      });
+      // console.log("Decoded transaction:", {
+      //   seller,
+      //   buyer,
+      //   assetId: decodedData[0],
+      //   tokens: decodedData[1],
+      //   funds: decodedData[2],
+      //   bySeller: decodedData[3],
+      //   byBuyer: decodedData[4],
+      //   isConfirmed: decodedData[5],
+      //   isFinished: decodedData[6],
+      //   isWithdraw: decodedData[7],
+      // });
 
       parsedLogs.push({
-        seller,
+        koltenaId: Number(decodedData[0]),
         buyer,
-        assetId: Number(decodedData[0]),
+        seller,
         tokens: Number(decodedData[1]),
         funds: Number(decodedData[2]),
-        bySeller: decodedData[3],
-        byBuyer: decodedData[4],
+        sellerApproved: decodedData[3],
+        buyerProposed: decodedData[4],
         isConfirmed: decodedData[5],
         isFinished: decodedData[6],
         isWithdraw: decodedData[7],

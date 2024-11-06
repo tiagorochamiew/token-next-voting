@@ -3,9 +3,12 @@ import { useState, useEffect } from "react";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { useWeb3 } from "@/contexts/Web3Context";
-import { useSmartContract } from "@/contexts/SmartContractContext";
-import { SaleRequest } from "@/interfaces/Events";
-import { parseTransactionLogs } from "@/utils/Parser";
+// import { useSmartContract } from "@/contexts/SmartContractContext";
+import { GETResponse } from "@/interfaces/Response";
+import { fetcher } from "@/api/fetcher";
+import { Transaction } from "@/interfaces/Transaction";
+import { TransactionStates } from "@/enums/TransactionStates";
+import { Collapsible } from "@/components/ui/Collapsible";
 
 interface AssetTransactionsModalProps {
   isOpen: boolean;
@@ -19,70 +22,143 @@ export function AssetTransactionsModal({
   assetId,
 }: AssetTransactionsModalProps) {
   const { account } = useWeb3();
-  const { fetchSaleRequests } = useSmartContract();
-  const [transactions, setTransactions] = useState<SaleRequest[]>([]);
+  // const { fetchSaleRequests } = useSmartContract();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const DEFAULT_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+  const categorizeTransactions = (txs: Transaction[]) => {
+    return {
+      pendingBids: txs.filter(
+        (tx) =>
+          tx.seller === DEFAULT_ADDRESS &&
+          tx.buyer.toLowerCase() === account.toLowerCase()
+      ),
+      pendingAuctions: txs.filter(
+        (tx) =>
+          tx.buyer === DEFAULT_ADDRESS &&
+          tx.seller.toLowerCase() === account.toLowerCase()
+      ),
+      pendingApprovals: txs.filter(
+        (tx) =>
+          tx.buyer !== DEFAULT_ADDRESS &&
+          tx.seller.toLowerCase() === account.toLowerCase()
+      ),
+      pendingProposals: txs.filter(
+        (tx) =>
+          tx.seller !== DEFAULT_ADDRESS &&
+          tx.buyer.toLowerCase() === account.toLowerCase()
+      ),
+      completedTransactions: txs.filter(
+        (tx) =>
+          tx.seller !== DEFAULT_ADDRESS &&
+          tx.buyer !== DEFAULT_ADDRESS &&
+          tx.state >= TransactionStates.Pending
+      ),
+    };
+  };
 
   useEffect(() => {
-    const loadTransactions = async () => {
-      if (!isOpen || !assetId) return;
+    const fetchTransactions = async () => {
+      if (!account || !assetId || assetId < 1) {
+        setTransactions([]);
+        return;
+      }
 
+      setIsLoading(true);
       try {
-        setIsLoading(true);
+        const response: GETResponse = await fetcher(
+          `transactions/${assetId}/${account}`
+        );
+        if (!response?.success || !response?.data) {
+          setError("Failed to fetch transactions");
+          setTransactions([]);
+          return;
+        }
+
+        setTransactions(response.data as Transaction[]);
         setError(null);
-        const saleRequests = await fetchSaleRequests();
-        const logs = parseTransactionLogs(saleRequests);
-        const txs = (await logs).filter(
-          (tx: SaleRequest) => tx.assetId === assetId
-        );
-        console.log("Fetched transactions:", txs.length);
-        setTransactions(txs);
       } catch (err) {
-        console.error("Error loading transactions:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load transactions"
-        );
+        console.error("Error fetching transactions:", err);
+        setError("Failed to load transactions");
+        setTransactions([]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadTransactions();
-  }, [isOpen, assetId, fetchSaleRequests]);
+    if (isOpen) {
+      fetchTransactions();
+    }
+  }, [isOpen, account, assetId]);
 
-  const getStatusColor = (status: string) => {
+  const formatAddress = (address: string): string => {
+    if (address === DEFAULT_ADDRESS) return "Pending";
+    if (address.toLowerCase() === account.toLowerCase()) return "You";
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+  const getStatusColor = (status: TransactionStates): string => {
     switch (status) {
-      case "proposed":
+      case TransactionStates.Proposed:
         return "bg-yellow-100 text-yellow-800";
-      case "approved":
+      case TransactionStates.Approved:
         return "bg-blue-100 text-blue-800";
-      case "confirmed":
+      case TransactionStates.Pending:
         return "bg-purple-100 text-purple-800";
-      case "completed":
+      case TransactionStates.Confirmed:
         return "bg-green-100 text-green-800";
-      default:
+      case TransactionStates.Finished:
         return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-red-400";
     }
   };
+  const renderTransaction = (tx: Transaction) => (
+    <div className="grid grid-cols-2 gap-4 text-sm border rounded p-3">
+      <div>
+        <p className="text-green-600">Seller</p>
+        <p
+          className={`font-medium ${
+            tx.seller === DEFAULT_ADDRESS ? "text-amber-600" : "text-black"
+          } truncate`}
+        >
+          {formatAddress(tx.seller)}
+        </p>
+      </div>
+      <div>
+        <p className="text-green-600">Buyer</p>
+        <p
+          className={`font-medium ${
+            tx.buyer === DEFAULT_ADDRESS ? "text-amber-600" : "text-black"
+          } truncate`}
+        >
+          {formatAddress(tx.buyer)}
+        </p>
+      </div>
+      <div>
+        <p className="text-green-600">Tokens</p>
+        <p className="font-medium text-black">{tx.tokens}</p>
+      </div>
+      <div>
+        <p className="text-green-600">Price</p>
+        <p className="font-medium text-black">{tx.funds} ETH</p>
+      </div>
+      <div className="col-span-2">
+        <span
+          className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+            tx.state
+          )}`}
+        >
+          {TransactionStates[tx.state] === "None"
+            ? "Waiting..."
+            : TransactionStates[tx.state]}
+        </span>
+      </div>
+    </div>
+  );
 
-  const getTransactionStatus = (tx: SaleRequest): string => {
-    if (tx.isFinished) return "completed";
-    if (tx.isConfirmed) return "confirmed";
-    if (tx.bySeller && tx.byBuyer) return "approved";
-    if (tx.bySeller) return "seller approved";
-    if (tx.byBuyer) return "buyer proposed";
-    return "proposed";
-  };
-
-  const getTransactionType = (
-    tx: SaleRequest,
-    currentAccount: string
-  ): string => {
-    if (tx.seller.toLowerCase() === currentAccount.toLowerCase()) return "SELL";
-    if (tx.buyer.toLowerCase() === currentAccount.toLowerCase()) return "BUY";
-    return "OTHER";
-  };
+  const categorizedTxs = categorizeTransactions(transactions);
 
   return (
     <Dialog
@@ -93,7 +169,9 @@ export function AssetTransactionsModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
           <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
+            <h2 className="text-xl text-black font-semibold mb-4">
+              Transaction History
+            </h2>
 
             {isLoading && (
               <div className="text-center py-4">Loading transactions...</div>
@@ -112,60 +190,71 @@ export function AssetTransactionsModal({
             )}
 
             <div className="space-y-4 overflow-y-auto max-h-[50vh]">
-              {transactions.map((tx, index) => (
-                <div
-                  key={`${tx.seller}_${tx.buyer}_${tx.assetId}_${index}`}
-                  className="border rounded-lg p-4 hover:bg-gray-50"
+              {categorizedTxs.pendingBids.length > 0 && (
+                <Collapsible
+                  title="Pending Bids"
+                  badge={categorizedTxs.pendingBids.length}
+                  defaultOpen
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <span
-                        className={`inline-block px-2 py-1 rounded-full text-sm font-medium text-black ${getStatusColor(
-                          getTransactionStatus(tx)
-                        )}`}
-                      >
-                        {getTransactionStatus(tx)}
-                      </span>
-                    </div>
-                    <span
-                      className={`text-sm font-medium text-black ${
-                        getTransactionType(tx, account) === "BUY"
-                          ? "text-green-600"
-                          : "text-blue-600"
-                      }`}
-                    >
-                      {getTransactionType(tx, account)}
-                    </span>
+                  <div className="space-y-2">
+                    {categorizedTxs.pendingBids.map((tx) =>
+                      renderTransaction(tx)
+                    )}
                   </div>
+                </Collapsible>
+              )}
 
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-green-600">Seller</p>
-                      {tx.seller.toLowerCase() === account.toLowerCase() && (
-                        <p className="font-medium text-black truncate">
-                          {`${tx.seller.slice(0, 6)}...${tx.seller.slice(-4)}`}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-green-600">Buyer</p>
-                      <p className="font-medium text-black truncate">
-                        {tx.buyer.toLowerCase() === account.toLowerCase()
-                          ? "You"
-                          : `${tx.buyer.slice(0, 6)}...${tx.buyer.slice(-4)}`}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-green-600">Tokens</p>
-                      <p className="font-medium text-black">{tx.tokens}</p>
-                    </div>
-                    <div>
-                      <p className="text-green-600">Price</p>
-                      <p className="font-medium text-black">{tx.funds} ETH</p>
-                    </div>
+              {categorizedTxs.pendingAuctions.length > 0 && (
+                <Collapsible
+                  title="Pending Auctions"
+                  badge={categorizedTxs.pendingAuctions.length}
+                >
+                  <div className="space-y-2">
+                    {categorizedTxs.pendingAuctions.map((tx) =>
+                      renderTransaction(tx)
+                    )}
                   </div>
-                </div>
-              ))}
+                </Collapsible>
+              )}
+
+              {categorizedTxs.pendingApprovals.length > 0 && (
+                <Collapsible
+                  title="Sales Approvals"
+                  badge={categorizedTxs.pendingApprovals.length}
+                >
+                  <div className="space-y-2">
+                    {categorizedTxs.pendingApprovals.map((tx) =>
+                      renderTransaction(tx)
+                    )}
+                  </div>
+                </Collapsible>
+              )}
+
+              {categorizedTxs.pendingProposals.length > 0 && (
+                <Collapsible
+                  title="Purchases Proposals"
+                  badge={categorizedTxs.pendingProposals.length}
+                >
+                  <div className="space-y-2">
+                    {categorizedTxs.pendingProposals.map((tx) =>
+                      renderTransaction(tx)
+                    )}
+                  </div>
+                </Collapsible>
+              )}
+
+              {categorizedTxs.completedTransactions.length > 0 && (
+                <Collapsible
+                  title="Completed Transactions"
+                  badge={categorizedTxs.completedTransactions.length}
+                >
+                  <div className="space-y-2">
+                    {categorizedTxs.completedTransactions.map((tx) =>
+                      renderTransaction(tx)
+                    )}
+                  </div>
+                </Collapsible>
+              )}
             </div>
           </div>
 
