@@ -1,5 +1,5 @@
 // components/modals/AssetTransactionsModal.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { useWeb3 } from "@/contexts/Web3Context";
@@ -9,6 +9,7 @@ import { fetcher } from "@/api/fetcher";
 import { Transaction } from "@/interfaces/Transaction";
 import { TransactionStates } from "@/enums/TransactionStates";
 import { Collapsible } from "@/components/ui/Collapsible";
+import { DEFAULT_ADDRESS } from "@/utils/Constants";
 
 interface AssetTransactionsModalProps {
   isOpen: boolean;
@@ -26,38 +27,49 @@ export function AssetTransactionsModal({
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const DEFAULT_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-  const categorizeTransactions = (txs: Transaction[]) => {
+  const categorizedTxs = useMemo(() => {
     return {
-      pendingBids: txs.filter(
+      pendingBids: transactions.filter(
         (tx) =>
-          tx.seller === DEFAULT_ADDRESS &&
-          tx.buyer.toLowerCase() === account.toLowerCase()
+          ((tx.seller.toLowerCase() === DEFAULT_ADDRESS.toLowerCase() &&
+            tx.buyer.toLowerCase() === account.toLowerCase()) ||
+            (tx.buyer === DEFAULT_ADDRESS.toLowerCase() &&
+              tx.seller.toLowerCase() !== account.toLowerCase())) &&
+          tx.state === TransactionStates.None
       ),
-      pendingAuctions: txs.filter(
+      pendingAuctions: transactions.filter(
         (tx) =>
-          tx.buyer === DEFAULT_ADDRESS &&
-          tx.seller.toLowerCase() === account.toLowerCase()
+          (tx.seller.toLowerCase() === DEFAULT_ADDRESS.toLowerCase() &&
+            tx.buyer.toLowerCase() !== account.toLowerCase()) ||
+          (tx.buyer === DEFAULT_ADDRESS.toLowerCase() &&
+            tx.seller.toLowerCase() === account.toLowerCase() &&
+            tx.state === TransactionStates.None)
       ),
-      pendingApprovals: txs.filter(
+      pendingApprovals: transactions.filter(
         (tx) =>
-          tx.buyer !== DEFAULT_ADDRESS &&
-          tx.seller.toLowerCase() === account.toLowerCase()
+          (tx.state === TransactionStates.Approved &&
+            tx.seller.toLowerCase() === account.toLowerCase()) ||
+          (tx.state === TransactionStates.Proposed &&
+            tx.seller.toLowerCase() === account.toLowerCase())
       ),
-      pendingProposals: txs.filter(
+      pendingProposals: transactions.filter(
         (tx) =>
-          tx.seller !== DEFAULT_ADDRESS &&
-          tx.buyer.toLowerCase() === account.toLowerCase()
+          (tx.state === TransactionStates.Proposed &&
+            tx.buyer.toLowerCase() === account.toLowerCase()) ||
+          (tx.state === TransactionStates.Approved &&
+            tx.buyer.toLowerCase() === account.toLowerCase())
       ),
-      completedTransactions: txs.filter(
+      inProgressTransactions: transactions.filter(
         (tx) =>
-          tx.seller !== DEFAULT_ADDRESS &&
-          tx.buyer !== DEFAULT_ADDRESS &&
-          tx.state >= TransactionStates.Pending
+          tx.state >= TransactionStates.Pending &&
+          tx.state < TransactionStates.Finished
+      ),
+      completedTransactions: transactions.filter(
+        (tx) => tx.state === TransactionStates.Finished
       ),
     };
-  };
+  }, [transactions, account]);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -69,7 +81,7 @@ export function AssetTransactionsModal({
       setIsLoading(true);
       try {
         const response: GETResponse = await fetcher(
-          `transactions/${assetId}/${account}`
+          `transactions/${assetId}/all`
         );
         if (!response?.success || !response?.data) {
           setError("Failed to fetch transactions");
@@ -114,13 +126,18 @@ export function AssetTransactionsModal({
         return "bg-gray-100 text-red-400";
     }
   };
-  const renderTransaction = (tx: Transaction) => (
-    <div className="grid grid-cols-2 gap-4 text-sm border rounded p-3">
+  const renderTransaction = (tx: Transaction, index: number) => (
+    <div
+      key={`${tx.id || ""}_${tx.seller}_${tx.buyer}_${tx.state}_${index}`}
+      className="grid grid-cols-2 gap-4 text-sm border rounded p-3"
+    >
       <div>
         <p className="text-green-600">Seller</p>
         <p
           className={`font-medium ${
-            tx.seller === DEFAULT_ADDRESS ? "text-amber-600" : "text-black"
+            tx.seller.toLowerCase() === DEFAULT_ADDRESS.toLowerCase()
+              ? "text-amber-600"
+              : "text-black"
           } truncate`}
         >
           {formatAddress(tx.seller)}
@@ -130,7 +147,9 @@ export function AssetTransactionsModal({
         <p className="text-green-600">Buyer</p>
         <p
           className={`font-medium ${
-            tx.buyer === DEFAULT_ADDRESS ? "text-amber-600" : "text-black"
+            tx.buyer === DEFAULT_ADDRESS.toLowerCase()
+              ? "text-amber-600"
+              : "text-black"
           } truncate`}
         >
           {formatAddress(tx.buyer)}
@@ -150,15 +169,43 @@ export function AssetTransactionsModal({
             tx.state
           )}`}
         >
-          {TransactionStates[tx.state] === "None"
-            ? "Waiting..."
-            : TransactionStates[tx.state]}
+          {`${
+            TransactionStates.None === tx.state
+              ? `${
+                  tx.seller.toLowerCase() === DEFAULT_ADDRESS.toLowerCase()
+                    ? "Waiting for a Seller to Auction"
+                    : "Waiting for a Buyer to Bid"
+                }`
+              : TransactionStates.Approved === tx.state
+              ? `Waiting for ${
+                  tx.buyer.toLowerCase() === account.toLowerCase()
+                    ? "Your"
+                    : "Buyer"
+                } Proposal`
+              : TransactionStates.Proposed === tx.state
+              ? `Waiting for ${
+                  tx.seller.toLowerCase() === account.toLowerCase()
+                    ? "Your"
+                    : "Seller"
+                } Approval`
+              : TransactionStates.Pending === tx.state
+              ? `Waiting for ${
+                  tx.seller.toLowerCase() === account.toLowerCase()
+                    ? "Your"
+                    : "Seller"
+                } Confirmation`
+              : TransactionStates.Confirmed === tx.state
+              ? `Waiting for ${
+                  tx.seller.toLowerCase() === account.toLowerCase()
+                    ? "Buyer"
+                    : "You"
+                } To Finish Transaction`
+              : TransactionStates[tx.state]
+          }`}
         </span>
       </div>
     </div>
   );
-
-  const categorizedTxs = categorizeTransactions(transactions);
 
   return (
     <Dialog
@@ -190,6 +237,43 @@ export function AssetTransactionsModal({
             )}
 
             <div className="space-y-4 overflow-y-auto max-h-[50vh]">
+              {categorizedTxs.inProgressTransactions.length > 0 && (
+                <Collapsible
+                  title="Transactions In Progress"
+                  badge={categorizedTxs.inProgressTransactions.length}
+                >
+                  <div className="space-y-2">
+                    {categorizedTxs.inProgressTransactions.map((tx, index) =>
+                      renderTransaction(tx, index)
+                    )}
+                  </div>
+                </Collapsible>
+              )}
+              {categorizedTxs.pendingApprovals.length > 0 && (
+                <Collapsible
+                  title="Pending Approvals"
+                  badge={categorizedTxs.pendingApprovals.length}
+                >
+                  <div className="space-y-2">
+                    {categorizedTxs.pendingApprovals.map((tx, index) =>
+                      renderTransaction(tx, index)
+                    )}
+                  </div>
+                </Collapsible>
+              )}
+
+              {categorizedTxs.pendingProposals.length > 0 && (
+                <Collapsible
+                  title="Pending Proposals"
+                  badge={categorizedTxs.pendingProposals.length}
+                >
+                  <div className="space-y-2">
+                    {categorizedTxs.pendingProposals.map((tx, index) =>
+                      renderTransaction(tx, index)
+                    )}
+                  </div>
+                </Collapsible>
+              )}
               {categorizedTxs.pendingBids.length > 0 && (
                 <Collapsible
                   title="Pending Bids"
@@ -197,8 +281,8 @@ export function AssetTransactionsModal({
                   defaultOpen
                 >
                   <div className="space-y-2">
-                    {categorizedTxs.pendingBids.map((tx) =>
-                      renderTransaction(tx)
+                    {categorizedTxs.pendingBids.map((tx, index) =>
+                      renderTransaction(tx, index)
                     )}
                   </div>
                 </Collapsible>
@@ -210,34 +294,8 @@ export function AssetTransactionsModal({
                   badge={categorizedTxs.pendingAuctions.length}
                 >
                   <div className="space-y-2">
-                    {categorizedTxs.pendingAuctions.map((tx) =>
-                      renderTransaction(tx)
-                    )}
-                  </div>
-                </Collapsible>
-              )}
-
-              {categorizedTxs.pendingApprovals.length > 0 && (
-                <Collapsible
-                  title="Sales Approvals"
-                  badge={categorizedTxs.pendingApprovals.length}
-                >
-                  <div className="space-y-2">
-                    {categorizedTxs.pendingApprovals.map((tx) =>
-                      renderTransaction(tx)
-                    )}
-                  </div>
-                </Collapsible>
-              )}
-
-              {categorizedTxs.pendingProposals.length > 0 && (
-                <Collapsible
-                  title="Purchases Proposals"
-                  badge={categorizedTxs.pendingProposals.length}
-                >
-                  <div className="space-y-2">
-                    {categorizedTxs.pendingProposals.map((tx) =>
-                      renderTransaction(tx)
+                    {categorizedTxs.pendingAuctions.map((tx, index) =>
+                      renderTransaction(tx, index)
                     )}
                   </div>
                 </Collapsible>
@@ -245,12 +303,12 @@ export function AssetTransactionsModal({
 
               {categorizedTxs.completedTransactions.length > 0 && (
                 <Collapsible
-                  title="Completed Transactions"
+                  title="Transactions Completed"
                   badge={categorizedTxs.completedTransactions.length}
                 >
                   <div className="space-y-2">
-                    {categorizedTxs.completedTransactions.map((tx) =>
-                      renderTransaction(tx)
+                    {categorizedTxs.completedTransactions.map((tx, index) =>
+                      renderTransaction(tx, index)
                     )}
                   </div>
                 </Collapsible>
