@@ -70,7 +70,7 @@ export default function AssetGrid({
       }
       if (activeTab === Pages.ACCOUNT) {
         const data = await loadAccountAssets();
-        setAccountAssets(data || []);
+        setAccountAssets(Array.isArray(data) ? (data as Asset[]) : []);
       }
     };
 

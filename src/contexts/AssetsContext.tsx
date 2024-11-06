@@ -77,7 +77,9 @@ export function AssetsProvider({ children }: AssetsProviderProps) {
   // if (!response?.data) {
   //   return [];
   // }
-  const assets = Array.isArray(response?.data) ? response.data : [];
+  const assets = Array.isArray(response?.data)
+    ? (response.data as Asset[])
+    : [];
 
   return (
     <AssetsContext.Provider

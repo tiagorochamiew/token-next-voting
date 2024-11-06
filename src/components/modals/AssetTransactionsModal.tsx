@@ -10,6 +10,7 @@ import { Transaction } from "@/interfaces/Transaction";
 import { TransactionStates } from "@/enums/TransactionStates";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { DEFAULT_ADDRESS } from "@/utils/Constants";
+import { SalesModal } from "./SalesModal";
 
 interface AssetTransactionsModalProps {
   isOpen: boolean;
@@ -27,7 +28,30 @@ export function AssetTransactionsModal({
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [salesModalConfig, setSalesModalConfig] = useState<{
+    isOpen: boolean;
+    mode: "buy" | "sell" | "self-sell";
+    ownerAddress?: string;
+    maxTokens: number;
+  } | null>(null);
 
+  const handleSale = (tx: Transaction) => {
+    setSalesModalConfig({
+      isOpen: true,
+      mode: "sell",
+      ownerAddress: tx.buyer,
+      maxTokens: tx.tokens,
+    });
+  };
+
+  const handlePurchase = (tx: Transaction) => {
+    setSalesModalConfig({
+      isOpen: true,
+      mode: "buy",
+      ownerAddress: tx.seller,
+      maxTokens: tx.tokens,
+    });
+  };
   const categorizedTxs = useMemo(() => {
     return {
       pendingBids: transactions.filter(
@@ -163,170 +187,251 @@ export function AssetTransactionsModal({
         <p className="text-green-600">Price</p>
         <p className="font-medium text-black">{tx.funds} ETH</p>
       </div>
-      <div className="col-span-2">
-        <span
-          className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-            tx.state
-          )}`}
-        >
-          {`${
-            TransactionStates.None === tx.state
-              ? `${
-                  tx.seller.toLowerCase() === DEFAULT_ADDRESS.toLowerCase()
-                    ? "Waiting for a Seller to Auction"
-                    : "Waiting for a Buyer to Bid"
-                }`
-              : TransactionStates.Approved === tx.state
-              ? `Waiting for ${
-                  tx.buyer.toLowerCase() === account.toLowerCase()
-                    ? "Your"
-                    : "Buyer"
-                } Proposal`
-              : TransactionStates.Proposed === tx.state
-              ? `Waiting for ${
-                  tx.seller.toLowerCase() === account.toLowerCase()
-                    ? "Your"
-                    : "Seller"
-                } Approval`
-              : TransactionStates.Pending === tx.state
-              ? `Waiting for ${
-                  tx.seller.toLowerCase() === account.toLowerCase()
-                    ? "Your"
-                    : "Seller"
-                } Confirmation`
-              : TransactionStates.Confirmed === tx.state
-              ? `Waiting for ${
-                  tx.seller.toLowerCase() === account.toLowerCase()
-                    ? "Buyer"
-                    : "You"
-                } To Finish Transaction`
-              : TransactionStates[tx.state]
-          }`}
-        </span>
+      <div className="col-span-2 flex justify-between items-center">
+        {/* Status text OR action button */}
+        {(() => {
+          // For default state (None)
+          if (tx.state === TransactionStates.None) {
+            if (
+              tx.seller.toLowerCase() === DEFAULT_ADDRESS.toLowerCase() &&
+              tx.buyer.toLowerCase() !== account.toLowerCase()
+            ) {
+              return (
+                <Button
+                  onClick={() => handlePurchase(tx)}
+                  className="bg-amber-600 hover:bg-amber-700 text-white text-xs"
+                >
+                  Accept Auction
+                </Button>
+              );
+            }
+            if (
+              tx.buyer.toLowerCase() === DEFAULT_ADDRESS.toLowerCase() &&
+              tx.seller.toLowerCase() !== account.toLowerCase()
+            ) {
+              return (
+                <Button
+                  onClick={() => handleSale(tx)}
+                  className="bg-amber-600 hover:bg-amber-700 text-white text-xs"
+                >
+                  Place Bid
+                </Button>
+              );
+            }
+          }
+
+          // For Proposed state
+          if (
+            tx.state === TransactionStates.Proposed &&
+            tx.seller.toLowerCase() === account.toLowerCase()
+          ) {
+            return (
+              <Button
+                onClick={() => handleSale(tx)}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
+              >
+                Approve Sale
+              </Button>
+            );
+          }
+
+          // For Approved state
+          if (
+            tx.state === TransactionStates.Approved &&
+            tx.buyer.toLowerCase() === account.toLowerCase()
+          ) {
+            return (
+              <Button
+                onClick={() => handlePurchase(tx)}
+                className="bg-green-600 hover:bg-green-700 text-white text-xs"
+              >
+                Propose Purchase
+              </Button>
+            );
+          }
+
+          // For other states or when no action is needed, show status text
+          return (
+            <span
+              className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                tx.state
+              )}`}
+            >
+              {TransactionStates.None === tx.state
+                ? "Waiting for a " +
+                  (tx.seller.toLowerCase() === DEFAULT_ADDRESS.toLowerCase()
+                    ? "Seller to Auction"
+                    : "Buyer to Bid")
+                : TransactionStates.Approved === tx.state
+                ? `Waiting for ${
+                    tx.buyer.toLowerCase() === account.toLowerCase()
+                      ? "Your"
+                      : "Buyer"
+                  } Proposal`
+                : TransactionStates.Proposed === tx.state
+                ? `Waiting for ${
+                    tx.seller.toLowerCase() === account.toLowerCase()
+                      ? "Your"
+                      : "Seller"
+                  } Approval`
+                : TransactionStates.Pending === tx.state
+                ? `Waiting for ${
+                    tx.seller.toLowerCase() === account.toLowerCase()
+                      ? "Your"
+                      : "Seller"
+                  } Confirmation`
+                : TransactionStates.Confirmed === tx.state
+                ? `Waiting for ${
+                    tx.seller.toLowerCase() === account.toLowerCase()
+                      ? "Buyer"
+                      : "Your"
+                  } Payment`
+                : TransactionStates[tx.state]}
+            </span>
+          );
+        })()}
       </div>
     </div>
   );
 
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={onClose}
-      title={`Asset #${assetId} Transactions`}
-    >
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
-          <div className="p-6">
-            <h2 className="text-xl text-black font-semibold mb-4">
-              Transaction History
-            </h2>
+    <>
+      <Dialog
+        open={isOpen}
+        onOpenChange={onClose}
+        title={`Asset #${assetId} Transactions`}
+      >
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-6">
+              <h2 className="text-xl text-black font-semibold mb-4">
+                Transaction History
+              </h2>
 
-            {isLoading && (
-              <div className="text-center py-4">Loading transactions...</div>
-            )}
+              {isLoading && (
+                <div className="text-center py-4">Loading transactions...</div>
+              )}
 
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                {error}
+              {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                  {error}
+                </div>
+              )}
+
+              {!isLoading && transactions.length === 0 && (
+                <div className="text-center py-4 text-green-600">
+                  No transactions found for this asset
+                </div>
+              )}
+
+              <div className="space-y-4 overflow-y-auto max-h-[50vh]">
+                {categorizedTxs.inProgressTransactions.length > 0 && (
+                  <Collapsible
+                    title="Transactions In Progress"
+                    badge={categorizedTxs.inProgressTransactions.length}
+                  >
+                    <div className="space-y-2">
+                      {categorizedTxs.inProgressTransactions.map((tx, index) =>
+                        renderTransaction(tx, index)
+                      )}
+                    </div>
+                  </Collapsible>
+                )}
+                {categorizedTxs.pendingApprovals.length > 0 && (
+                  <Collapsible
+                    title="Pending Approvals"
+                    badge={categorizedTxs.pendingApprovals.length}
+                  >
+                    <div className="space-y-2">
+                      {categorizedTxs.pendingApprovals.map((tx, index) =>
+                        renderTransaction(tx, index)
+                      )}
+                    </div>
+                  </Collapsible>
+                )}
+
+                {categorizedTxs.pendingProposals.length > 0 && (
+                  <Collapsible
+                    title="Pending Proposals"
+                    badge={categorizedTxs.pendingProposals.length}
+                  >
+                    <div className="space-y-2">
+                      {categorizedTxs.pendingProposals.map((tx, index) =>
+                        renderTransaction(tx, index)
+                      )}
+                    </div>
+                  </Collapsible>
+                )}
+                {categorizedTxs.pendingBids.length > 0 && (
+                  <Collapsible
+                    title="Pending Bids"
+                    badge={categorizedTxs.pendingBids.length}
+                    defaultOpen
+                  >
+                    <div className="space-y-2">
+                      {categorizedTxs.pendingBids.map((tx, index) =>
+                        renderTransaction(tx, index)
+                      )}
+                    </div>
+                  </Collapsible>
+                )}
+
+                {categorizedTxs.pendingAuctions.length > 0 && (
+                  <Collapsible
+                    title="Pending Auctions"
+                    badge={categorizedTxs.pendingAuctions.length}
+                  >
+                    <div className="space-y-2">
+                      {categorizedTxs.pendingAuctions.map((tx, index) =>
+                        renderTransaction(tx, index)
+                      )}
+                    </div>
+                  </Collapsible>
+                )}
+
+                {categorizedTxs.completedTransactions.length > 0 && (
+                  <Collapsible
+                    title="Transactions Completed"
+                    badge={categorizedTxs.completedTransactions.length}
+                  >
+                    <div className="space-y-2">
+                      {categorizedTxs.completedTransactions.map((tx, index) =>
+                        renderTransaction(tx, index)
+                      )}
+                    </div>
+                  </Collapsible>
+                )}
               </div>
-            )}
+            </div>
 
-            {!isLoading && transactions.length === 0 && (
-              <div className="text-center py-4 text-green-600">
-                No transactions found for this asset
-              </div>
-            )}
-
-            <div className="space-y-4 overflow-y-auto max-h-[50vh]">
-              {categorizedTxs.inProgressTransactions.length > 0 && (
-                <Collapsible
-                  title="Transactions In Progress"
-                  badge={categorizedTxs.inProgressTransactions.length}
-                >
-                  <div className="space-y-2">
-                    {categorizedTxs.inProgressTransactions.map((tx, index) =>
-                      renderTransaction(tx, index)
-                    )}
-                  </div>
-                </Collapsible>
-              )}
-              {categorizedTxs.pendingApprovals.length > 0 && (
-                <Collapsible
-                  title="Pending Approvals"
-                  badge={categorizedTxs.pendingApprovals.length}
-                >
-                  <div className="space-y-2">
-                    {categorizedTxs.pendingApprovals.map((tx, index) =>
-                      renderTransaction(tx, index)
-                    )}
-                  </div>
-                </Collapsible>
-              )}
-
-              {categorizedTxs.pendingProposals.length > 0 && (
-                <Collapsible
-                  title="Pending Proposals"
-                  badge={categorizedTxs.pendingProposals.length}
-                >
-                  <div className="space-y-2">
-                    {categorizedTxs.pendingProposals.map((tx, index) =>
-                      renderTransaction(tx, index)
-                    )}
-                  </div>
-                </Collapsible>
-              )}
-              {categorizedTxs.pendingBids.length > 0 && (
-                <Collapsible
-                  title="Pending Bids"
-                  badge={categorizedTxs.pendingBids.length}
-                  defaultOpen
-                >
-                  <div className="space-y-2">
-                    {categorizedTxs.pendingBids.map((tx, index) =>
-                      renderTransaction(tx, index)
-                    )}
-                  </div>
-                </Collapsible>
-              )}
-
-              {categorizedTxs.pendingAuctions.length > 0 && (
-                <Collapsible
-                  title="Pending Auctions"
-                  badge={categorizedTxs.pendingAuctions.length}
-                >
-                  <div className="space-y-2">
-                    {categorizedTxs.pendingAuctions.map((tx, index) =>
-                      renderTransaction(tx, index)
-                    )}
-                  </div>
-                </Collapsible>
-              )}
-
-              {categorizedTxs.completedTransactions.length > 0 && (
-                <Collapsible
-                  title="Transactions Completed"
-                  badge={categorizedTxs.completedTransactions.length}
-                >
-                  <div className="space-y-2">
-                    {categorizedTxs.completedTransactions.map((tx, index) =>
-                      renderTransaction(tx, index)
-                    )}
-                  </div>
-                </Collapsible>
-              )}
+            <div className="border-t p-4 flex justify-end">
+              <Button
+                onClick={onClose}
+                variant="secondary"
+                className="bg-gray-100 hover:bg-gray-200"
+              >
+                Close
+              </Button>
             </div>
           </div>
-
-          <div className="border-t p-4 flex justify-end">
-            <Button
-              onClick={onClose}
-              variant="secondary"
-              className="bg-gray-100 hover:bg-gray-200"
-            >
-              Close
-            </Button>
-          </div>
         </div>
-      </div>
-    </Dialog>
+      </Dialog>
+
+      {salesModalConfig && (
+        <SalesModal
+          isOpen={salesModalConfig.isOpen}
+          onClose={() => setSalesModalConfig(null)}
+          mode={salesModalConfig.mode}
+          assetId={assetId}
+          maxTokens={salesModalConfig.maxTokens}
+          ownerAddress={salesModalConfig.ownerAddress}
+          onTransactionComplete={() => {
+            setSalesModalConfig(null);
+            // // Refresh transactions
+            // fetchTransactions();
+          }}
+        />
+      )}
+    </>
   );
 }
