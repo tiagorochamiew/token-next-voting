@@ -93,7 +93,6 @@ export function SalesModal({
       return;
     }
     try {
-      console.log(`Placing ${mode} for ${ownerAddress}`);
       const request: SaleRequest = {
         koltenaId: assetId,
         buyer: mode === "bid" ? ownerAddress : DEFAULT_ADDRESS,

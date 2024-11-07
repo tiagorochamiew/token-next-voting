@@ -3,9 +3,10 @@ import { useState, useEffect, useMemo } from "react";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { useWeb3 } from "@/contexts/Web3Context";
-// import { useSmartContract } from "@/contexts/SmartContractContext";
-import { GETResponse } from "@/interfaces/Response";
+import { useSmartContract } from "@/contexts/SmartContractContext";
+import { GETResponse, POSTResponse } from "@/interfaces/Response";
 import { fetcher } from "@/api/fetcher";
+import { patcher } from "@/api/patcher";
 import { Transaction } from "@/interfaces/Transaction";
 import { TransactionStates } from "@/enums/TransactionStates";
 import { Collapsible } from "@/components/ui/Collapsible";
@@ -24,7 +25,7 @@ export function AssetTransactionsModal({
   assetId,
 }: AssetTransactionsModalProps) {
   const { account } = useWeb3();
-  // const { fetchSaleRequests } = useSmartContract();
+  const { fetchSaleRequests } = useSmartContract();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +105,47 @@ export function AssetTransactionsModal({
 
       setIsLoading(true);
       try {
+        const logs = await fetchSaleRequests();
+        console.log("Fetched logs:", logs.length);
+
+        // Filter logs for current asset
+        const assetLogs = logs.filter((log) => log.koltenaId === assetId);
+        console.log("Filtered logs for asset:", assetLogs.length);
+
+        // Format logs according to backend expectations
+        const transactions = assetLogs.map((log) => ({
+          koltenaId: Number(log.koltenaId),
+          buyer: log.buyer,
+          seller: log.seller,
+          tokens: Number(log.tokens),
+          funds: Number(log.funds),
+          sellerApproved: log.sellerApproved,
+          buyerProposed: log.buyerProposed,
+          isConfirmed: log.isConfirmed,
+          isFinished: log.isFinished,
+          isWithdraw: log.isWithdraw,
+        }));
+
+        if (transactions.length > 0) {
+          try {
+            console.log("Posting transactions:", transactions);
+            const postResponse: POSTResponse = await patcher(
+              `transactions`,
+              "POST",
+              {
+                transactions: transactions,
+              }
+            );
+
+            if (!postResponse?.success) {
+              console.error("Failed to post transactions:", postResponse);
+              throw new Error("Failed to post transactions");
+            }
+            console.log("Successfully posted transactions");
+          } catch (postError) {
+            console.error("Error posting transactions:", postError);
+          }
+        }
         const response: GETResponse = await fetcher(
           `transactions/${assetId}/all`
         );
@@ -112,7 +154,10 @@ export function AssetTransactionsModal({
           setTransactions([]);
           return;
         }
-
+        console.log(
+          "Fetched transactions:",
+          (response.data as Transaction[]).length
+        );
         setTransactions(response.data as Transaction[]);
         setError(null);
       } catch (err) {
@@ -188,9 +233,7 @@ export function AssetTransactionsModal({
         <p className="font-medium text-black">{tx.funds} ETH</p>
       </div>
       <div className="col-span-2 flex justify-between items-center">
-        {/* Status text OR action button */}
         {(() => {
-          // For default state (None)
           if (tx.state === TransactionStates.None) {
             if (
               tx.seller.toLowerCase() === DEFAULT_ADDRESS.toLowerCase() &&
@@ -219,8 +262,6 @@ export function AssetTransactionsModal({
               );
             }
           }
-
-          // For Proposed state
           if (
             tx.state === TransactionStates.Proposed &&
             tx.seller.toLowerCase() === account.toLowerCase()
@@ -234,8 +275,6 @@ export function AssetTransactionsModal({
               </Button>
             );
           }
-
-          // For Approved state
           if (
             tx.state === TransactionStates.Approved &&
             tx.buyer.toLowerCase() === account.toLowerCase()
@@ -250,7 +289,6 @@ export function AssetTransactionsModal({
             );
           }
 
-          // For other states or when no action is needed, show status text
           return (
             <span
               className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
@@ -427,8 +465,6 @@ export function AssetTransactionsModal({
           ownerAddress={salesModalConfig.ownerAddress}
           onTransactionComplete={() => {
             setSalesModalConfig(null);
-            // // Refresh transactions
-            // fetchTransactions();
           }}
         />
       )}

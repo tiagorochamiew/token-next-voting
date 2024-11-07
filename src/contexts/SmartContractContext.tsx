@@ -6,12 +6,17 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { ethers, EventLog, Log } from "ethers";
+import { ethers } from "ethers";
 import { useWeb3 } from "@/contexts/Web3Context";
 import contract from "../../artifacts/contracts/koltena.sol/fnft.json";
-import { ParseActiveEventLogs, ParseMintLogs } from "@/utils/Parser";
+import {
+  ParseActiveEventLogs,
+  ParseMintLogs,
+  parseTransactionLogsToSaleRequests,
+} from "@/utils/Parser";
 import { MintResult } from "@/interfaces/MintResult";
 import apiConfig from "@/lib/config";
+import { SaleRequest } from "@/interfaces/Events";
 
 const CONTRACT_ADDRESS = apiConfig.contractAddress || "";
 const CONTRACT_ABI = contract.abi;
@@ -57,7 +62,7 @@ interface SmartContractContextType {
     addresses: string[],
     assets: number[]
   ) => Promise<number[]>;
-  fetchSaleRequests: () => Promise<(Log | EventLog)[]>;
+  fetchSaleRequests: () => Promise<SaleRequest[]>;
 }
 
 const SmartContractContext = createContext<
@@ -105,8 +110,8 @@ export function SmartContractProvider({
       };
 
       const logs = await provider.getLogs(filter);
-      console.log("Raw logs:", logs.length);
-      return logs;
+      const saleRequests = parseTransactionLogsToSaleRequests(logs);
+      return saleRequests;
     } catch (err) {
       console.error("Error loading transactions:", err);
       throw err;

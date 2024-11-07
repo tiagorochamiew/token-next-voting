@@ -6,9 +6,6 @@ export async function patcher<T>(
   method: string,
   formData: T
 ): Promise<POSTResponse | PUTResponse> {
-  console.log("url ", `${apiConfig.apiUrl}/${url}`);
-  console.log("method ", `${method}`);
-  console.log("formData ", `${formData}`);
   const response = await fetch(`${apiConfig.apiUrl}/${url}`, {
     method: method.toUpperCase(),
     headers: { "Content-Type": "application/json" },

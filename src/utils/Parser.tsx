@@ -16,9 +16,7 @@ export function ParseActiveEventLogs(data: string) {
   return id;
 }
 
-export async function parseTransactionLogs(
-  logs: Log[]
-): Promise<SaleRequest[]> {
+export function parseTransactionLogsToSaleRequests(logs: Log[]): SaleRequest[] {
   const parsedLogs: SaleRequest[] = [];
   const abiCoder = ethers.AbiCoder.defaultAbiCoder();
 
@@ -48,21 +46,7 @@ export async function parseTransactionLogs(
         ],
         log.data
       );
-
-      // console.log("Decoded transaction:", {
-      //   seller,
-      //   buyer,
-      //   assetId: decodedData[0],
-      //   tokens: decodedData[1],
-      //   funds: decodedData[2],
-      //   bySeller: decodedData[3],
-      //   byBuyer: decodedData[4],
-      //   isConfirmed: decodedData[5],
-      //   isFinished: decodedData[6],
-      //   isWithdraw: decodedData[7],
-      // });
-
-      parsedLogs.push({
+      const saleRequest: SaleRequest = {
         koltenaId: Number(decodedData[0]),
         buyer,
         seller,
@@ -73,11 +57,11 @@ export async function parseTransactionLogs(
         isConfirmed: decodedData[5],
         isFinished: decodedData[6],
         isWithdraw: decodedData[7],
-      });
+      };
+      parsedLogs.push(saleRequest);
     } catch (error) {
       console.error("Error parsing log:", error, "for log:", log);
     }
   }
-
   return parsedLogs;
 }
