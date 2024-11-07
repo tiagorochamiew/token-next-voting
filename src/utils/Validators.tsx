@@ -7,7 +7,6 @@ export function validateAssetForm(formData: Partial<Asset>): {
 } {
   const errors: Partial<Record<keyof Asset, string>> = {};
 
-  // Base validation
   if (!formData.type) errors.type = "Type is required";
   if (!formData.title) errors.title = "Title is required";
   if (!formData.url) errors.url = "Image URL is required";
@@ -22,7 +21,6 @@ export function validateAssetForm(formData: Partial<Asset>): {
   if (!formData.size) errors.size = "Size is required";
   if (!formData.liquidity) errors.liquidity = "Liquidity is required";
 
-  // Array fields validation
   if (!formData.historicalPerformance?.length) {
     errors.historicalPerformance =
       "At least one historical performance item is required";
@@ -37,7 +35,6 @@ export function validateAssetForm(formData: Partial<Asset>): {
     errors.volatility = "At least one volatility value is required";
   }
 
-  // Type-specific validation
   switch (formData.type) {
     case "RealEstate":
       if (!formData.features?.length) {
