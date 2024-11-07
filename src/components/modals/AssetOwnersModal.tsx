@@ -4,6 +4,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { useWeb3 } from "@/contexts/Web3Context";
 import { SalesModal } from "./SalesModal";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 
 interface OwnerBalance {
   address: string;
@@ -117,6 +118,34 @@ export function AssetOwnersModal({
     }
   };
 
+  const getActionItems = (owner: OwnerBalance) => {
+    const items: { label: string; onClick: () => void }[] = [];
+    const isCurrentUser = owner.address.toLowerCase() === account.toLowerCase();
+
+    if (!isCurrentUser) {
+      items.push({
+        label: "Buy",
+        onClick: () => handlePurchase(owner.address, owner.balance),
+      });
+    }
+
+    if (accountBalance > 0) {
+      items.push({
+        label: "Sell",
+        onClick: () => handleSale(owner.address, accountBalance),
+      });
+    }
+
+    if (isCurrentUser) {
+      items.push({
+        label: "Auction",
+        onClick: () => handleAuction(account, accountBalance),
+      });
+    }
+
+    return items;
+  };
+
   return (
     <>
       <Dialog
@@ -159,7 +188,7 @@ export function AssetOwnersModal({
                       className="flex items-center justify-between p-4 border rounded-lg"
                     >
                       <div>
-                        <p className="font-medium text-black font-bold">
+                        <p className="font-medium text-black">
                           {owner.address.slice(0, 6)}...
                           {owner.address.slice(-4)}
                         </p>
@@ -171,36 +200,7 @@ export function AssetOwnersModal({
                           tokens
                         </p>
                       </div>
-                      {owner.address.toUpperCase() !==
-                        account.toUpperCase() && (
-                        <Button
-                          onClick={() =>
-                            handlePurchase(owner.address, owner.balance)
-                          }
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          Buy
-                        </Button>
-                      )}
-                      {accountBalance > 0 && (
-                        <Button
-                          onClick={() =>
-                            handleSale(owner.address, accountBalance)
-                          }
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          Sell
-                        </Button>
-                      )}
-                      {owner.address.toUpperCase() ===
-                        account.toUpperCase() && (
-                        <Button
-                          onClick={() => handleAuction(account, accountBalance)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          Auction
-                        </Button>
-                      )}
+                      <ActionMenu items={getActionItems(owner)} />
                     </div>
                   ))}
               </div>
@@ -220,7 +220,8 @@ export function AssetOwnersModal({
                     owners?.length > 1)) && (
                   <Button
                     onClick={() => handleBid(account, accountBalance)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    variant="secondary"
+                    className="hover:bg-black text-white"
                   >
                     Bid
                   </Button>
@@ -236,6 +237,7 @@ export function AssetOwnersModal({
           </div>
         </div>
       </Dialog>
+
       {salesModalConfig && (
         <SalesModal
           isOpen={salesModalConfig.isOpen}

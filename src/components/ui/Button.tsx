@@ -16,7 +16,7 @@ export function Button({
 }: ButtonProps) {
   const baseStyles = "px-4 py-2 rounded-lg font-medium transition-colors";
   const variants = {
-    primary: "bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-300",
+    primary: "bg-black-800 hover:bg-black-500 text-white disabled:bg-black-300",
     secondary:
       "bg-gray-200 hover:bg-gray-300 text-gray-800 disabled:bg-gray-100",
     cancel: "bg-red-200 hover:bg-gray-300 text-gray-800 disabled:bg-gray-100",
