@@ -146,20 +146,20 @@ export default function AssetCard({
             <div className="space-x-2">
               {asset.koltenaId > 0 && (
                 <Button
-                  onClick={() => setIsTransactionsModalOpen(true)}
-                  variant="secondary"
-                  className="text-sm bg-gray-100 hover:bg-gray-200"
-                >
-                  Transactions
-                </Button>
-              )}
-              {asset.koltenaId > 0 && (
-                <Button
                   onClick={() => setIsAssetOwnersModalOpen(true)}
                   variant="secondary"
                   className="text-sm bg-gray-100 hover:bg-gray-200"
                 >
                   Owners
+                </Button>
+              )}
+              {asset.koltenaId > 0 && (
+                <Button
+                  onClick={() => setIsTransactionsModalOpen(true)}
+                  variant="secondary"
+                  className="text-sm bg-gray-100 hover:bg-gray-200"
+                >
+                  Transactions
                 </Button>
               )}
             </div>

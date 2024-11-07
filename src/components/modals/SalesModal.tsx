@@ -6,11 +6,15 @@ import { Input } from "@/components/ui/Input";
 import { useWeb3 } from "@/contexts/Web3Context";
 import { useSmartContract } from "@/contexts/SmartContractContext";
 import { ethers } from "ethers";
+import { DEFAULT_ADDRESS } from "@/utils/Constants";
+import { POSTResponse } from "@/interfaces/Response";
+import { patcher } from "@/api/patcher";
+import { SaleRequest } from "@/interfaces/Events";
 
 interface SalesModalProps {
   isOpen: boolean;
   onClose: () => void;
-  mode: "buy" | "sell" | "self-sell";
+  mode: "buy" | "sell" | "self-sell" | "auction" | "bid";
   assetId: number;
   maxTokens: number;
   ownerAddress?: string;
@@ -71,11 +75,71 @@ export function SalesModal({
     setBuyerAddress(e.target.value);
   };
 
+  const handleAccountAuctionBid = async (
+    mode: "auction" | "bid",
+    ownerAddress: string,
+    assetId: number,
+    numTokens: number,
+    funds: number
+  ) => {
+    if (
+      !ownerAddress ||
+      !assetId ||
+      assetId < 1 ||
+      numTokens < 1 ||
+      funds < 0
+    ) {
+      console.error("Invalid input for auction/bid");
+      return;
+    }
+    try {
+      console.log(`Placing ${mode} for ${ownerAddress}`);
+      const request: SaleRequest = {
+        koltenaId: assetId,
+        buyer: mode === "bid" ? ownerAddress : DEFAULT_ADDRESS,
+        seller: mode === "auction" ? ownerAddress : DEFAULT_ADDRESS,
+        tokens: numTokens,
+        funds,
+        sellerApproved: false,
+        buyerProposed: false,
+        isConfirmed: false,
+        isFinished: false,
+        isWithdraw: false,
+      };
+      const response: POSTResponse = await patcher(`transactions`, "POST", {
+        transactions: [request],
+      });
+      if (!response?.success || !response?.data) {
+        console.log(`Failed to ${mode} tokens for asset ${assetId}`);
+        return;
+      }
+      console.log(`Success: ${mode} tokens for asset ${assetId}`);
+    } catch (err) {
+      console.error("Error fetching transactions:", err);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
     try {
-      if (mode === "buy") {
+      if (mode === "auction") {
+        await handleAccountAuctionBid(
+          mode,
+          account,
+          assetId,
+          parseInt(numTokens),
+          parseFloat(funds)
+        );
+      } else if (mode === "bid") {
+        await handleAccountAuctionBid(
+          mode,
+          account,
+          assetId,
+          parseInt(numTokens),
+          parseFloat(funds)
+        );
+      } else if (mode === "buy") {
         await proposePurchaseOfTokens(
           sellerAddress,
           assetId,
@@ -102,14 +166,27 @@ export function SalesModal({
       open={isOpen}
       onOpenChange={onClose}
       title={`${
-        mode === "buy" ? "Purchase" : "Sell"
+        mode === "buy"
+          ? "Purchase"
+          : mode === "auction"
+          ? "Auction"
+          : mode === "bid"
+          ? "Bid"
+          : "Sell"
       } Tokens for Asset #${assetId}`}
     >
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg max-w-md w-full">
           <div className="p-6">
             <h2 className="text-xl font-semibold mb-4 text-black">
-              {mode === "buy" ? "Purchase" : "Sell"} Tokens
+              {mode === "buy"
+                ? "Purchase"
+                : mode === "auction"
+                ? "Place Auction of"
+                : mode === "bid"
+                ? "Place Bid of"
+                : "Sell"}{" "}
+              Tokens
             </h2>
 
             <div className="space-y-4">

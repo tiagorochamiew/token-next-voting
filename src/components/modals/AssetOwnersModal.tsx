@@ -35,7 +35,7 @@ export function AssetOwnersModal({
   const [error, setError] = useState<string | null>(null);
   const [salesModalConfig, setSalesModalConfig] = useState<{
     isOpen: boolean;
-    mode: "buy" | "sell" | "self-sell";
+    mode: "buy" | "sell" | "self-sell" | "auction" | "bid";
     ownerAddress?: string;
     maxTokens: number;
   } | null>(null);
@@ -80,6 +80,26 @@ export function AssetOwnersModal({
     setSalesModalConfig({
       isOpen: true,
       mode: "buy",
+      ownerAddress,
+      maxTokens: ownerBalance,
+    });
+  };
+
+  const handleAuction = (ownerAddress: string, ownerBalance: number) => {
+    console.log("handleAuction", ownerAddress, ownerBalance);
+    setSalesModalConfig({
+      isOpen: true,
+      mode: "auction",
+      ownerAddress,
+      maxTokens: ownerBalance,
+    });
+  };
+
+  const handleBid = (ownerAddress: string, ownerBalance: number) => {
+    console.log("handleBid", ownerAddress, ownerBalance);
+    setSalesModalConfig({
+      isOpen: true,
+      mode: "bid",
       ownerAddress,
       maxTokens: ownerBalance,
     });
@@ -172,12 +192,39 @@ export function AssetOwnersModal({
                           Sell
                         </Button>
                       )}
+                      {owner.address.toUpperCase() ===
+                        account.toUpperCase() && (
+                        <Button
+                          onClick={() => handleAuction(account, accountBalance)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          Auction
+                        </Button>
+                      )}
                     </div>
                   ))}
               </div>
             </div>
 
-            <div className="border-t p-4 flex justify-end">
+            <div className="border-t p-4 flex justify-end space-x-4">
+              {!isLoading &&
+                ((owners.some(
+                  (owner) =>
+                    owner.address.toLowerCase() === account.toLowerCase()
+                ) &&
+                  owners?.length > 2) ||
+                  (!owners.some(
+                    (owner) =>
+                      owner.address.toLowerCase() === account.toLowerCase()
+                  ) &&
+                    owners?.length > 1)) && (
+                  <Button
+                    onClick={() => handleBid(account, accountBalance)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Bid
+                  </Button>
+                )}
               <Button
                 onClick={onClose}
                 variant="secondary"
