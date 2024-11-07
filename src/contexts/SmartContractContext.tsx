@@ -306,7 +306,7 @@ export function SmartContractProvider({
         }
 
         const contract = await getContract();
-        const tx = await contract.confirmSale(buyerAddress, BigInt(assetId));
+        const tx = await contract.confirmSale(BigInt(assetId), buyerAddress);
         const receipt = await tx.wait();
 
         const logs = ParseActiveEventLogs(receipt.logs[0].data);
@@ -343,7 +343,7 @@ export function SmartContractProvider({
           sellerAddress,
           BigInt(assetId),
           {
-            value: BigInt(funds),
+            value: funds,
           }
         );
         const receipt = await tx.wait();

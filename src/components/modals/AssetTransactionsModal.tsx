@@ -1,5 +1,5 @@
 // components/modals/AssetTransactionsModal.tsx
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { useWeb3 } from "@/contexts/Web3Context";
@@ -25,7 +25,10 @@ export function AssetTransactionsModal({
   assetId,
 }: AssetTransactionsModalProps) {
   const { account } = useWeb3();
-  const { fetchSaleRequests } = useSmartContract();
+  const [loadingTxId, setLoadingTxId] = useState<string | null>(null);
+  const [loadingStatus, setLoadingStatus] = useState<string>("");
+  const { fetchSaleRequests, confirmSaleOfTokens, finishTransactionOfTokens } =
+    useSmartContract();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,83 +99,66 @@ export function AssetTransactionsModal({
     };
   }, [transactions, account]);
 
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      if (!account || !assetId || assetId < 1) {
+  const fetchTransactions = useCallback(async () => {
+    if (!account || !assetId || assetId < 1) {
+      setTransactions([]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const logs = await fetchSaleRequests();
+      console.log("Fetched logs:", logs.length);
+      const assetLogs = logs.filter((log) => log.koltenaId === assetId);
+      console.log("Filtered logs for asset:", assetLogs.length);
+      if (assetLogs.length > 0) {
+        try {
+          console.log("Posting assetLogs:", assetLogs);
+          const postResponse: POSTResponse = await patcher(
+            `transactions`,
+            "POST",
+            {
+              transactions: assetLogs,
+            }
+          );
+
+          if (!postResponse?.success) {
+            console.error("Failed to post transactions:", postResponse);
+            throw new Error("Failed to post transactions");
+          }
+          console.log("Successfully posted transactions");
+        } catch (postError) {
+          console.error("Error posting transactions:", postError);
+        }
+      }
+      const response: GETResponse = await fetcher(
+        `transactions/${assetId}/all`
+      );
+      if (!response?.success || !response?.data) {
+        setError("Failed to fetch transactions");
         setTransactions([]);
         return;
       }
+      console.log(
+        "Fetched transactions:",
+        (response.data as Transaction[]).length
+      );
+      setTransactions(response.data as Transaction[]);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching transactions:", err);
+      setError("Failed to load transactions");
+      setTransactions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [account, assetId, fetchSaleRequests]);
 
-      setIsLoading(true);
-      try {
-        const logs = await fetchSaleRequests();
-        console.log("Fetched logs:", logs.length);
-
-        // Filter logs for current asset
-        const assetLogs = logs.filter((log) => log.koltenaId === assetId);
-        console.log("Filtered logs for asset:", assetLogs.length);
-
-        // Format logs according to backend expectations
-        const transactions = assetLogs.map((log) => ({
-          koltenaId: Number(log.koltenaId),
-          buyer: log.buyer,
-          seller: log.seller,
-          tokens: Number(log.tokens),
-          funds: Number(log.funds),
-          sellerApproved: log.sellerApproved,
-          buyerProposed: log.buyerProposed,
-          isConfirmed: log.isConfirmed,
-          isFinished: log.isFinished,
-          isWithdraw: log.isWithdraw,
-        }));
-
-        if (transactions.length > 0) {
-          try {
-            console.log("Posting transactions:", transactions);
-            const postResponse: POSTResponse = await patcher(
-              `transactions`,
-              "POST",
-              {
-                transactions: transactions,
-              }
-            );
-
-            if (!postResponse?.success) {
-              console.error("Failed to post transactions:", postResponse);
-              throw new Error("Failed to post transactions");
-            }
-            console.log("Successfully posted transactions");
-          } catch (postError) {
-            console.error("Error posting transactions:", postError);
-          }
-        }
-        const response: GETResponse = await fetcher(
-          `transactions/${assetId}/all`
-        );
-        if (!response?.success || !response?.data) {
-          setError("Failed to fetch transactions");
-          setTransactions([]);
-          return;
-        }
-        console.log(
-          "Fetched transactions:",
-          (response.data as Transaction[]).length
-        );
-        setTransactions(response.data as Transaction[]);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching transactions:", err);
-        setError("Failed to load transactions");
-        setTransactions([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
+  useEffect(() => {
     if (isOpen) {
       fetchTransactions();
     }
-  }, [isOpen, account, assetId]);
+  }, [isOpen, fetchTransactions]);
 
   const formatAddress = (address: string): string => {
     if (address === DEFAULT_ADDRESS) return "Pending";
@@ -193,6 +179,55 @@ export function AssetTransactionsModal({
         return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-red-400";
+    }
+  };
+  const handleConfirm = async (tx: Transaction) => {
+    const txId = `${tx.koltenaId}_${tx.seller}_${tx.buyer}`;
+    try {
+      setLoadingTxId(txId);
+      setLoadingStatus("Initializing confirmation...");
+
+      setLoadingStatus("Awaiting MetaMask approval...");
+      const result = await confirmSaleOfTokens(tx.buyer, tx.koltenaId);
+
+      setLoadingStatus("Confirming transaction...");
+      console.log("Confirmation successful:", result);
+
+      setLoadingStatus("Refreshing transaction list...");
+      await fetchTransactions();
+    } catch (err) {
+      console.error("Failed to confirm transaction:", err);
+      setLoadingStatus("Transaction failed");
+    } finally {
+      setLoadingTxId(null);
+      setLoadingStatus("");
+    }
+  };
+
+  const handleFinish = async (tx: Transaction) => {
+    const txId = `${tx.koltenaId}_${tx.seller}_${tx.buyer}`;
+    try {
+      setLoadingTxId(txId);
+      setLoadingStatus("Initializing payment...");
+
+      setLoadingStatus("Awaiting MetaMask approval...");
+      const result = await finishTransactionOfTokens(
+        tx.seller,
+        tx.koltenaId,
+        Number(tx.funds)
+      );
+
+      setLoadingStatus("Processing payment...");
+      console.log("Payment successful:", result);
+
+      setLoadingStatus("Refreshing transaction list...");
+      await fetchTransactions();
+    } catch (err) {
+      console.error("Failed to finish transaction:", err);
+      setLoadingStatus("Payment failed");
+    } finally {
+      setLoadingTxId(null);
+      setLoadingStatus("");
     }
   };
   const renderTransaction = (tx: Transaction, index: number) => (
@@ -288,7 +323,47 @@ export function AssetTransactionsModal({
               </Button>
             );
           }
+          if (
+            tx.state === TransactionStates.Pending &&
+            tx.seller.toLowerCase() === account.toLowerCase()
+          ) {
+            const isLoading =
+              loadingTxId === `${tx.koltenaId}_${tx.seller}_${tx.buyer}`;
+            return (
+              <Button
+                onClick={() => handleConfirm(tx)}
+                disabled={isLoading}
+                className={`text-xs ${
+                  isLoading
+                    ? "bg-purple-400 cursor-not-allowed"
+                    : "bg-purple-600 hover:bg-purple-700"
+                } text-white`}
+              >
+                {isLoading ? loadingStatus : "Confirm Sale"}
+              </Button>
+            );
+          }
 
+          if (
+            tx.state === TransactionStates.Confirmed &&
+            tx.buyer.toLowerCase() === account.toLowerCase()
+          ) {
+            const isLoading =
+              loadingTxId === `${tx.koltenaId}_${tx.seller}_${tx.buyer}`;
+            return (
+              <Button
+                onClick={() => handleFinish(tx)}
+                disabled={isLoading}
+                className={`text-xs ${
+                  isLoading
+                    ? "bg-green-400 cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-700"
+                } text-white`}
+              >
+                {isLoading ? loadingStatus : "Complete Payment"}
+              </Button>
+            );
+          }
           return (
             <span
               className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
